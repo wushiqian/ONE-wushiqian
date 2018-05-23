@@ -37,4 +37,12 @@ public class Picture {
         this.itemId = itemId;
         this.message = message;
     }
+
+    public Picture(int itemId){
+        this.itemId = itemId;
+    }
+
+//    public Picture getPicture(int itemId){
+//
+//    }
 }

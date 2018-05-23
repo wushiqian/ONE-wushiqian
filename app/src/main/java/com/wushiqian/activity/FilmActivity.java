@@ -1,5 +1,6 @@
 package com.wushiqian.activity;
 
+import android.animation.ObjectAnimator;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -9,7 +10,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -20,8 +23,10 @@ import com.wushiqian.adapter.MusicAdapter;
 import com.wushiqian.bean.Film;
 import com.wushiqian.bean.Music;
 import com.wushiqian.ui.LoadMoreListView;
+import com.wushiqian.util.CacheUtil;
 import com.wushiqian.util.HttpCallbackListener;
 import com.wushiqian.util.HttpUtil;
+import com.wushiqian.util.LogUtil;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -39,6 +44,12 @@ public class FilmActivity extends AppCompatActivity{
     public static final int UPDATE = 2;
     private int nextList = 0;
     FilmAdapter adapter;
+    JSONArray jsonArray;
+    CacheUtil mCache;
+    private float scaledTouchSlop;
+    private float firstY = 0;
+    private ObjectAnimator animtor;
+    Film film ;
 
     private Handler handler = new Handler() {
         public void handleMessage(Message msg) {
@@ -59,7 +70,6 @@ public class FilmActivity extends AppCompatActivity{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_list);
         mListView = findViewById(R.id.activity_list_view);
-        initArticle();
         toolbar = findViewById(R.id.toolBar);
         //设置成actionbar
         setSupportActionBar(toolbar);
@@ -101,61 +111,159 @@ public class FilmActivity extends AppCompatActivity{
             }
 
         });
+        //判断认为是滑动的最小距离(乘以系数调整滑动灵敏度)
+        scaledTouchSlop = ViewConfiguration.get(this).getScaledTouchSlop()*3.0f;
+        mCache = CacheUtil.get(this);
+        initArticle();
+        /**
+         * 设置触摸事件
+         */
+        mListView.setOnTouchListener(new View.OnTouchListener() {
+            private float currentY;
+            private int direction=-1;
+            private boolean mShow = true;
+
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        firstY = event.getY();
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        currentY = event.getY();
+                        //向下滑动
+                        if (currentY - firstY > scaledTouchSlop) {
+                            direction = 0;
+                            toolbar.setVisibility(View.VISIBLE);
+                        }
+                        //向上滑动
+                        else if (firstY - currentY > scaledTouchSlop) {
+                            direction = 1;
+                        }
+                        //如果是向上滑动，并且ToolBar是显示的，就隐藏ToolBar
+                        if (direction == 1) {
+                            if (mShow) {
+                                toobarAnim(1);
+                                mShow = !mShow;
+                            }
+                        } else if (direction == 0) {
+                            if (!mShow) {
+                                toobarAnim(0);
+                                mShow = !mShow;
+                            }
+                        }
+                        break;
+                    case MotionEvent.ACTION_UP:
+                        break;
+                }
+                return false;//注意此处不能返回true，因为如果返回true,onTouchEvent就无法执行，导致的后果是ListView无法滑动
+            }
+        });
+    }
+
+    /**
+     * ToolBar显示隐藏动画
+     * @param direction
+     */
+    public void toobarAnim(int direction) {
+        //开始新的动画之前要先取消以前的动画
+        if (animtor != null && animtor.isRunning()) {
+            animtor.cancel();
+        }
+        //toolbar.getTranslationY()获取的是Toolbar距离自己顶部的距离
+        float translationY=toolbar.getTranslationY();
+        if (direction == 0) {
+            animtor = ObjectAnimator.ofFloat(toolbar, "translationY", translationY, 0);
+            animtor.start();
+        } else if (direction == 1) {
+            animtor = ObjectAnimator.ofFloat(toolbar, "translationY", translationY, -toolbar.getHeight());
+            animtor.start();
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try{
+                        Thread.sleep(150);
+                    }catch (InterruptedException e){
+                        e.printStackTrace();
+                    }
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            toolbar.setVisibility(View.GONE);
+                        }
+                    });
+                }
+            }).start();
+        }
+
+
     }
 
     private void loadMore() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
                         initArticle();
                         adapter.notifyDataSetChanged();
                         mListView.setLoadCompleted();
-                    }
-                });
-            }
-        }).start();
     }
 
     private void initArticle() {
-        HttpUtil.sendHttpRequest("http://v3.wufazhuce.com:8000/api/channel/movie/more/" + nextList + "?channel=wdj&version=4.0.2&uuid=ffffffff-a90e-706a-63f7-ccf973aae5ee&platform=android", new HttpCallbackListener() {
-            @Override
-            public void onFinish(final String response) {
-                Film film = null;
-                try{
-                    JSONArray jsonArray = new JSONArray(response);
-                    for(int i = 0; i < jsonArray.length();i++){
-                        JSONObject jsonObject = jsonArray.getJSONObject(i);
-                        String title = jsonObject.getString("title");
-                        String forward = "《" + jsonObject.getString("subtitle") + "》";
-                        String imageUrl = jsonObject.getString("img_url");
-                        int itemId = jsonObject.getInt("item_id");
-                        nextList = jsonObject.getInt("id");
-                        film = new Film(title,forward,itemId,imageUrl);
-                        mFilmList.add(film);
-                    }
-                } catch(Exception e){
-                    e.printStackTrace();
+        jsonArray = mCache.getAsJSONArray("http://v3.wufazhuce.com:8000/api/channel/movie/more/"
+                + nextList + "?channel=wdj&version=4.0.2&uuid=ffffffff-a90e-706a-63f7-ccf973aae5ee&platform=android");
+        if (jsonArray != null) {
+            LogUtil.d("MusicActivity","缓存加载");
+            try{
+                mCache.put("http://v3.wufazhuce.com:8000/api/channel/movie/more/"
+                        + nextList + "?channel=wdj&version=4.0.2&uuid=ffffffff-a90e-706a-63f7-ccf973aae5ee&platform=android",jsonArray,CacheUtil.TIME_DAY);
+                for(int i = 0; i < jsonArray.length();i++){
+                    JSONObject jsonObject = jsonArray.getJSONObject(i);
+                    String title = jsonObject.getString("title");
+                    String forward = "《" + jsonObject.getString("subtitle") + "》";
+                    String imageUrl = jsonObject.getString("img_url");
+                    int itemId = jsonObject.getInt("item_id");
+                    nextList = jsonObject.getInt("id");
+                    film = new Film(title,forward,itemId,imageUrl);
+                    mFilmList.add(film);
                 }
-                Message message = new Message();
-                message.what = UPDATE;
-                handler.sendMessage(message);
+            } catch(Exception e){
+                e.printStackTrace();
             }
-
-            @Override
-            public void onError(Exception e) {
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Message message = new Message();
-                        message.what = TOAST;
-                        handler.sendMessage(message);
+            Message message = new Message();
+            message.what = UPDATE;
+            handler.sendMessage(message);
+        }else {
+            HttpUtil.sendHttpRequest("http://v3.wufazhuce.com:8000/api/channel/movie/more/"
+                    + nextList + "?channel=wdj&version=4.0.2&uuid=ffffffff-a90e-706a-63f7-ccf973aae5ee&platform=android", new HttpCallbackListener() {
+                @Override
+                public void onFinish(final String response) {
+                    try {
+                        jsonArray = new JSONArray(response);
+                        mCache.put("http://v3.wufazhuce.com:8000/api/channel/movie/more/"
+                                + nextList + "?channel=wdj&version=4.0.2&uuid=ffffffff-a90e-706a-63f7-ccf973aae5ee&platform=android",jsonArray,CacheUtil.TIME_DAY);
+                        for (int i = 0; i < jsonArray.length(); i++) {
+                            JSONObject jsonObject = jsonArray.getJSONObject(i);
+                            String title = jsonObject.getString("title");
+                            String forward = "《" + jsonObject.getString("subtitle") + "》";
+                            String imageUrl = jsonObject.getString("img_url");
+                            int itemId = jsonObject.getInt("item_id");
+                            nextList = jsonObject.getInt("id");
+                            film = new Film(title, forward, itemId, imageUrl);
+                            mFilmList.add(film);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-                }).start();
-            }
-        });
+                    Message message = new Message();
+                    message.what = UPDATE;
+                    handler.sendMessage(message);
+                }
+
+                @Override
+                public void onError(Exception e) {
+                            Message message = new Message();
+                            message.what = TOAST;
+                            handler.sendMessage(message);
+                }
+            });
+        }
     }
 
     // 重写
@@ -175,21 +283,11 @@ public class FilmActivity extends AppCompatActivity{
     }
 
     private void refreshArticle() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        nextList = 0;
-                        mFilmList.clear();
-                        initArticle();
-                        adapter.notifyDataSetChanged();
-                        swipeRefresh.setRefreshing(false);
-                    }
-                });
-            }
-        }).start();
+        nextList = 0;
+        mFilmList.clear();
+        initArticle();
+        adapter.notifyDataSetChanged();
+        swipeRefresh.setRefreshing(false);
     }
 
 }

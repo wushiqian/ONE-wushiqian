@@ -64,26 +64,23 @@ public class MainActivity extends AppCompatActivity implements MyViewPager.OnVie
     private boolean mIsTouch = false;
     private LinearLayout mPointContainer;
     private String mdate = "";
-    String imageUrl = "";
-    String imageUrl1 = "";
-    String imageUrl2 = "";
-    String message = "";
-    String content = "";
-    String text = "";
-    String articleTitle = "";
-    String articleAuthor = "";
-    String articleUrl = "";
-    String articleForward = "";
-    TextView mTvMessage;
-    TextView mTvContent;
-    TextView mTvText;
-    ImageView mIvPic;
-    TextView mTvarticleTitle;
-    TextView mTvarticleAuthor;
-    TextView mTvarticleForward;
-    ImageView mIvArticle;
-    MyDatabaseHelper dbHelper;
-    DBManager mDBManager;
+    private String imageUrl = "";
+    private String imageUrl1 = "";
+    private String imageUrl2 = "";
+    private String message = "";
+    private String content = "";
+    private String text = "";
+    private String articleTitle = "";
+    private String articleAuthor = "";
+    private String articleForward = "";
+    private TextView mTvMessage;
+    private TextView mTvContent;
+    private TextView mTvText;
+    private ImageView mIvPic;
+    private TextView mTvarticleTitle;
+    private TextView mTvarticleAuthor;
+    private TextView mTvarticleForward;
+    private ImageView mIvArticle;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -177,7 +174,8 @@ public class MainActivity extends AppCompatActivity implements MyViewPager.OnVie
     }
 
     private void initPicture() {
-        HttpUtil.sendHttpRequest("http://v3.wufazhuce.com:8000/api/hp/bymonth/" + mdate + "%2000:00:00?channel=wdj&version=4.0.2&uuid=ffffffff-a90e-706a-63f7-ccf973aae5ee&platform=android", new HttpCallbackListener() {
+        HttpUtil.sendHttpRequest("http://v3.wufazhuce.com:8000/api/hp/bymonth/"
+                + mdate + "%2000:00:00?channel=wdj&version=4.0.2&uuid=ffffffff-a90e-706a-63f7-ccf973aae5ee&platform=android", new HttpCallbackListener() {
             @Override
             public void onFinish(final String data) {
                 try{
@@ -250,6 +248,9 @@ public class MainActivity extends AppCompatActivity implements MyViewPager.OnVie
                         Toast.makeText(MainActivity.this, "影视列表界面", Toast.LENGTH_SHORT).show();
                         intent = new Intent(MainActivity.this, FilmActivity.class);
                         startActivity(intent);
+                        break;
+                    case R.id.nav_about:
+                        Toast.makeText(MainActivity.this, "next version", Toast.LENGTH_SHORT).show();
                         break;
                 }
                     mDrawerLayout.closeDrawers();

@@ -11,13 +11,18 @@ import android.widget.ImageView;
 
 import com.wushiqian.activity.MainActivity;
 import com.wushiqian.bean.RotateBean;
+import com.wushiqian.util.CacheUtil;
+import com.wushiqian.util.LogUtil;
+import com.wushiqian.util.MyApplication;
 
 import java.io.InputStream;
 import java.util.List;
 
 public class LooperPagerAdapter extends PagerAdapter {
 
+    private static final String TAG = "LooperPagerAdapter";
     private List<RotateBean> mPics = null;
+    private CacheUtil mCache;
 
     @Override
     public int getCount() {
@@ -70,14 +75,19 @@ public class LooperPagerAdapter extends PagerAdapter {
         }
 
         protected Bitmap doInBackground(String... urls) {
+            mCache = CacheUtil.get(MyApplication.getContext());
             String urldisplay = urls[0];
-            Bitmap mIcon11 = null;
-            try {
-                InputStream in = new java.net.URL(urldisplay).openStream();
-                mIcon11 = BitmapFactory.decodeStream(in);
-            } catch (Exception e) {
-                Log.e("Error", e.getMessage());
-                e.printStackTrace();
+            Bitmap mIcon11 = mCache.getAsBitmap(urldisplay);
+            if (mIcon11 == null) {
+                LogUtil.d(TAG,"网络加载的图片");
+                try {
+                    InputStream in = new java.net.URL(urldisplay).openStream();
+                    mIcon11 = BitmapFactory.decodeStream(in);
+                    mCache.put(urldisplay,mIcon11,12 * CacheUtil.TIME_HOUR);
+                } catch (Exception e) {
+                    LogUtil.e("Error", e.getMessage());
+                    e.printStackTrace();
+                }
             }
             return mIcon11;
         }
@@ -86,4 +96,5 @@ public class LooperPagerAdapter extends PagerAdapter {
             bmImage.setImageBitmap(result);
         }
     }
+
 }

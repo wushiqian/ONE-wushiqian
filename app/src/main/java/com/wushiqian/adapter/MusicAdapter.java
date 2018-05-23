@@ -16,7 +16,7 @@ import android.widget.TextView;
 
 import com.example.wushiqian.one_wushiqian.R;
 import com.wushiqian.bean.Music;
-import com.wushiqian.util.ACache;
+import com.wushiqian.util.CacheUtil;
 import com.wushiqian.util.MyApplication;
 
 import java.io.IOException;
@@ -32,7 +32,7 @@ public class MusicAdapter extends BaseAdapter {
     private List<Music> list;
     private ListView listView;
     private LruCache<String, BitmapDrawable> mImageCache;
-    private ACache mCache;
+    private CacheUtil mCache;
 
     public MusicAdapter(List<Music> list) {
         super();
@@ -130,7 +130,7 @@ public class MusicAdapter extends BaseAdapter {
          * @return
          */
         private Bitmap downloadImage() {
-            mCache = ACache.get(MyApplication.getContext());
+            mCache = CacheUtil.get(MyApplication.getContext());
             HttpURLConnection con = null;
             Bitmap bitmap = mCache.getAsBitmap(imageUrl);
             if(bitmap == null) {
@@ -140,7 +140,7 @@ public class MusicAdapter extends BaseAdapter {
                     con.setConnectTimeout(5 * 1000);
                     con.setReadTimeout(10 * 1000);
                     bitmap = BitmapFactory.decodeStream(con.getInputStream());
-                    mCache.put(imageUrl, bitmap, ACache.TIME_DAY);
+                    mCache.put(imageUrl, bitmap, CacheUtil.TIME_DAY);
                 } catch (IOException e) {
                     e.printStackTrace();
                 } finally {
@@ -151,6 +151,8 @@ public class MusicAdapter extends BaseAdapter {
             }
             return bitmap;
         }
-
     }
+
+
+
 }

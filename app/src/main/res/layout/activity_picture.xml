@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <com.example.sunxiaokun.retrofixandrxjava.utils.MyViewPager
+    <com.wushiqian.ui.MyViewPager
         android:id="@+id/mvp"
         android:layout_width="match_parent"
         android:layout_height="230dp"/>

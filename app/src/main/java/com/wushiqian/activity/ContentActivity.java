@@ -24,7 +24,7 @@ import com.example.wushiqian.one_wushiqian.R;
 import com.wushiqian.adapter.CommentAdapter;
 import com.wushiqian.bean.Comment;
 import com.wushiqian.ui.LoadMoreListView;
-import com.wushiqian.util.ACache;
+import com.wushiqian.util.CacheUtil;
 import com.wushiqian.util.HttpCallbackListener;
 import com.wushiqian.util.HttpUtil;
 import com.wushiqian.util.LogUtil;
@@ -79,7 +79,11 @@ public class ContentActivity extends AppCompatActivity {
     String coverUrl = "";
     String titleInfo = "";
     JSONObject jsonObject;
-    private ACache mCache;
+    private CacheUtil mCache;
+    JSONObject jsonObjectMovie;
+    JSONObject jsonAuthor;
+    JSONObject jsonComment;
+    JSONObject jsonObjectArticle;
 
     private Handler handler = new Handler() {
         public void handleMessage(@NonNull Message msg) {
@@ -154,48 +158,77 @@ public class ContentActivity extends AppCompatActivity {
     }
 
     private void initMovie() {
-        HttpUtil.sendHttpRequest(address, new HttpCallbackListener() {
-            @Override
-            public void onFinish(final String response) {
-                try{
-                    JSONObject jsonObjectdata = new JSONObject(response);
-                    String data = jsonObjectdata.getString("data");
-                    JSONArray jsonArray = new JSONArray(data);
-                    JSONObject jsonObject = jsonArray.getJSONObject(0);
-//                    JSONObject jsonObject = new JSONObject(response);
-                    String user = jsonObject.getString("user");
-                    JSONObject jsonObject1 = new JSONObject(user);
-                    title = jsonObject.getString("title");
-                    result = jsonObject.getString("content");
-                    String userName = jsonObject1.getString("user_name");
-                    titleInfo = "文/" + userName;
-                    introauthor = jsonObject.getString("charge_edt");
-                    copyright = jsonObject.getString("copyright");
-                }catch (Exception e){
-                    e.printStackTrace();
+        jsonObjectMovie = mCache.getAsJSONObject(address);
+        if(jsonObjectMovie == null) {
+            HttpUtil.sendHttpRequest(address, new HttpCallbackListener() {
+                @Override
+                public void onFinish(final String response) {
+                    try {
+                        jsonObjectMovie = new JSONObject(response);
+                        mCache.put(address,jsonObjectMovie,CacheUtil.TIME_HOUR);
+                        String data = jsonObjectMovie.getString("data");
+                        JSONArray jsonArray = new JSONArray(data);
+                        JSONObject jsonObject = jsonArray.getJSONObject(0);
+                        String user = jsonObject.getString("user");
+                        JSONObject jsonObject1 = new JSONObject(user);
+                        title = jsonObject.getString("title");
+                        result = jsonObject.getString("content");
+                        String userName = jsonObject1.getString("user_name");
+                        titleInfo = "文/" + userName;
+                        introauthor = jsonObject.getString("charge_edt");
+                        copyright = jsonObject.getString("copyright");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Message message = new Message();
+                            message.what = UPDATE_TEXT;
+                            handler.sendMessage(message);
+                        }
+                    }).start();
                 }
 
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Message message = new Message();
-                        message.what = UPDATE_TEXT;
-                        handler.sendMessage(message);
-                    }
-                }).start();
-            }
+                @Override
+                public void onError(Exception e) {
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Message message = new Message();
+                            message.what = TOAST;
+                            handler.sendMessage(message);
+                        }
+                    }).start();
+                }
+            });
+        }else{
+            mCache.put(address,jsonObjectMovie,CacheUtil.TIME_HOUR);
+            try{
+            String data = jsonObjectMovie.getString("data");
+            JSONArray jsonArray = new JSONArray(data);
+            JSONObject jsonObject = jsonArray.getJSONObject(0);
+            String user = jsonObject.getString("user");
+            JSONObject jsonObject1 = new JSONObject(user);
+            title = jsonObject.getString("title");
+            result = jsonObject.getString("content");
+            String userName = jsonObject1.getString("user_name");
+            titleInfo = "文/" + userName;
+            introauthor = jsonObject.getString("charge_edt");
+            copyright = jsonObject.getString("copyright");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        new Thread(new Runnable() {
             @Override
-            public void onError(Exception e) {
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Message message = new Message();
-                        message.what = TOAST;
-                        handler.sendMessage(message);
-                    }
-                }).start();
+            public void run() {
+                Message message = new Message();
+                message.what = UPDATE_TEXT;
+                handler.sendMessage(message);
             }
-        });
+        }).start();
+        }
     }
 
     private void initMusic() {
@@ -203,7 +236,7 @@ public class ContentActivity extends AppCompatActivity {
         if(jsonObject != null){
             LogUtil.d("ContentActivity","缓存加载");
             try{
-                mCache.put(address,jsonObject,50);
+                mCache.put(address,jsonObject,CacheUtil.TIME_HOUR);
                 title = jsonObject.getString("story_title");
                 result = jsonObject.getString("story");
                 coverUrl = jsonObject.getString("cover");
@@ -229,8 +262,8 @@ public class ContentActivity extends AppCompatActivity {
                 @Override
                 public void onFinish(final String response) {
                     try{
-                        JSONObject jsonObject = new JSONObject(response);
-                        mCache.put(address,jsonObject,50);
+                        jsonObject = new JSONObject(response);
+                        mCache.put(address,jsonObject,CacheUtil.TIME_HOUR);
                         title = jsonObject.getString("story_title");
                         result = jsonObject.getString("story");
                         coverUrl = jsonObject.getString("cover");
@@ -242,7 +275,6 @@ public class ContentActivity extends AppCompatActivity {
                     }catch (Exception e){
                         e.printStackTrace();
                     }
-
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
@@ -269,7 +301,7 @@ public class ContentActivity extends AppCompatActivity {
     }
 
     private void initView() {
-        mCache = ACache.get(this);
+        mCache = CacheUtil.get(this);
         mToolbar = findViewById(R.id.content_toolBar);
         //设置成actionbar
         setSupportActionBar(mToolbar);
@@ -297,30 +329,35 @@ public class ContentActivity extends AppCompatActivity {
     }
 
     private void initAuthor() {
-        HttpUtil.sendHttpRequest(address, new HttpCallbackListener() {
-            @Override
-            public void onFinish(final String response) {
-                try {
-                    if(type.equals("music")){
-                        JSONObject jsonObjectdata = new JSONObject(response);
-                        String data = jsonObjectdata.getString("story_author");
-                        JSONObject jsonObject = new JSONObject(data);
-                        author = jsonObject.getString("user_name");
-                        authorImaUrl = jsonObject.getString("web_url");
-                        authorDesc = jsonObject.getString("desc");
-                }else if(type.equals("movie")) {
-                        JSONObject jsonObjectdata = new JSONObject(response);
-                        String data = jsonObjectdata.getString("data");
-                        JSONArray jsonArray = new JSONArray(data);
-                        JSONObject jsonObject = jsonArray.getJSONObject(0);
-                        String authorData = jsonObject.getString("user");
-                        JSONObject jsonObject1 = new JSONObject(authorData);
-                        author = jsonObject1.getString("user_name");
-                        authorImaUrl = jsonObject1.getString("web_url");
-                        authorDesc = jsonObject1.getString("desc");
-                    }else {
-                            JSONObject jsonObjectdata = new JSONObject(response);
-                            String data = jsonObjectdata.getString("author");
+        jsonAuthor = mCache.getAsJSONObject(address + type);
+        if(jsonAuthor == null){
+            HttpUtil.sendHttpRequest(address, new HttpCallbackListener() {
+                @Override
+                public void onFinish(final String response) {
+                    try {
+                        if(type.equals("music")){
+                            jsonAuthor = new JSONObject(response);
+                            mCache.put(address + type,jsonAuthor, CacheUtil.TIME_HOUR);
+                            String data = jsonAuthor.getString("story_author");
+                            JSONObject jsonObject = new JSONObject(data);
+                            author = jsonObject.getString("user_name");
+                            authorImaUrl = jsonObject.getString("web_url");
+                            authorDesc = jsonObject.getString("desc");
+                        }else if(type.equals("movie")) {
+                            jsonAuthor = new JSONObject(response);
+                            mCache.put(address + type,jsonAuthor,CacheUtil.TIME_HOUR);
+                            String data = jsonAuthor.getString("data");
+                            JSONArray jsonArray = new JSONArray(data);
+                            JSONObject jsonObject = jsonArray.getJSONObject(0);
+                            String authorData = jsonObject.getString("user");
+                            JSONObject jsonObject1 = new JSONObject(authorData);
+                            author = jsonObject1.getString("user_name");
+                            authorImaUrl = jsonObject1.getString("web_url");
+                            authorDesc = jsonObject1.getString("desc");
+                        }else {
+                            jsonAuthor = new JSONObject(response);
+                            mCache.put(address + type,jsonAuthor,CacheUtil.TIME_HOUR);
+                            String data = jsonAuthor.getString("author");
                             JSONArray jsonArray = new JSONArray(data);
                             for (int i = 0; i < jsonArray.length(); i++) {
                                 JSONObject jsonObject = jsonArray.getJSONObject(i);
@@ -329,97 +366,15 @@ public class ContentActivity extends AppCompatActivity {
                                 authorDesc = jsonObject.getString("desc");
                             }
                         }
-                }catch (JSONException e){
-                    e.printStackTrace();
-                }
-
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Message message = new Message();
-                        message.what = UPDATE_AUTHOR;
-                        handler.sendMessage(message);
+                    }catch (JSONException e){
+                        e.printStackTrace();
                     }
-                }).start();
-            }
-            @Override
-            public void onError(Exception e) {
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Message message = new Message();
-                        message.what = TOAST;
-                        handler.sendMessage(message);
-                    }
-                }).start();
-            }
-        });
-    }
-
-    private void initComment() {
-        HttpUtil.sendHttpRequest("http://v3.wufazhuce.com:8000/api/comment/praiseandtime/" + type + "/" + itemId + "/0?&platform=android", new HttpCallbackListener() {
-            @Override
-            public void onFinish(final String response) {
-                Comment comment = null;
-                try{
-                    JSONObject json = new JSONObject(response);
-                    String data = json.getString("data");
-                    JSONArray jsonArray = new JSONArray(data);
-                    for(int i = 0; i < jsonArray.length();i++){
-                        JSONObject jsonObject = jsonArray.getJSONObject(i);
-                        String user = jsonObject.getString("user");
-                        JSONObject jo = new JSONObject(user);
-                        String imageUrl = jo.getString("web_url");
-                        String userName = jo.getString("user_name");
-                        String time = jsonObject.getString("input_date");
-                        String scomment = jsonObject.getString("content");
-                        int praiseNum = jsonObject.getInt("praisenum");
-                        comment = new Comment(imageUrl,userName,time,scomment,praiseNum);
-                        mCommentList.add(comment);
-                    }
-                } catch(Exception e){
-                    e.printStackTrace();
-                }
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Message message = new Message();
-                        message.what = UPDATE_COMMENT;
-                        handler.sendMessage(message);
-                    }
-                }).start();
-            }
-            @Override
-            public void onError(Exception e) {
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Message message = new Message();
-                        message.what = TOAST;
-                        handler.sendMessage(message);
-                    }
-                }).start();
-            }
-        });
-    }
-
-    private void initContent() {
-//        jsonObject =
-        HttpUtil.sendHttpRequest(address, new HttpCallbackListener() {
-                @Override
-                public void onFinish(final String response) {
-                    title = Utility.parseJSONtitle(response);
-                    result = Utility.parseJSON(response);
-                    String auth = Utility.parseJSONauthor(response);
-                    titleInfo = "文/" + auth;
-                    introauthor = Utility.parseJSONIntroAuthor(response);
-                    copyright = Utility.parseJSONcopyright(response);
 
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
                             Message message = new Message();
-                            message.what = UPDATE_TEXT;
+                            message.what = UPDATE_AUTHOR;
                             handler.sendMessage(message);
                         }
                     }).start();
@@ -436,6 +391,195 @@ public class ContentActivity extends AppCompatActivity {
                     }).start();
                 }
             });
+        }else{
+            try {
+                if(type.equals("music")){
+                    mCache.put(address + type,jsonAuthor,CacheUtil.TIME_HOUR);
+                    String data = jsonAuthor.getString("story_author");
+                    JSONObject jsonObject = new JSONObject(data);
+                    author = jsonObject.getString("user_name");
+                    authorImaUrl = jsonObject.getString("web_url");
+                    authorDesc = jsonObject.getString("desc");
+                }else if(type.equals("movie")) {
+                    mCache.put(address + type,jsonAuthor,CacheUtil.TIME_HOUR);
+                    String data = jsonAuthor.getString("data");
+                    JSONArray jsonArray = new JSONArray(data);
+                    JSONObject jsonObject = jsonArray.getJSONObject(0);
+                    String authorData = jsonObject.getString("user");
+                    JSONObject jsonObject1 = new JSONObject(authorData);
+                    author = jsonObject1.getString("user_name");
+                    authorImaUrl = jsonObject1.getString("web_url");
+                    authorDesc = jsonObject1.getString("desc");
+                }else {
+                    mCache.put(address + type,jsonAuthor,CacheUtil.TIME_HOUR);
+                    String data = jsonAuthor.getString("author");
+                    JSONArray jsonArray = new JSONArray(data);
+                    for (int i = 0; i < jsonArray.length(); i++) {
+                        JSONObject jsonObject = jsonArray.getJSONObject(i);
+                        author = jsonObject.getString("user_name");
+                        authorImaUrl = jsonObject.getString("web_url");
+                        authorDesc = jsonObject.getString("desc");
+                    }
+                }
+            }catch (JSONException e){
+                e.printStackTrace();
+            }
+
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    Message message = new Message();
+                    message.what = UPDATE_AUTHOR;
+                    handler.sendMessage(message);
+                }
+            }).start();
+        }
+    }
+
+    private void initComment() {
+        jsonComment = mCache.getAsJSONObject("http://v3.wufazhuce.com:8000/api/comment/praiseandtime/" + type + "/" + itemId + "/0?&platform=android");
+        if(jsonComment == null){
+            HttpUtil.sendHttpRequest("http://v3.wufazhuce.com:8000/api/comment/praiseandtime/"
+                    + type + "/" + itemId + "/0?&platform=android", new HttpCallbackListener() {
+                @Override
+                public void onFinish(final String response) {
+                    Comment comment = null;
+                    try{
+                        jsonAuthor = new JSONObject(response);
+                        mCache.put("http://v3.wufazhuce.com:8000/api/comment/praiseandtime/" + type
+                                + "/" + itemId + "/0?&platform=android",jsonAuthor,CacheUtil.TIME_HOUR);
+                        String data = jsonAuthor.getString("data");
+                        JSONArray jsonArray = new JSONArray(data);
+                        for(int i = 0; i < jsonArray.length();i++){
+                            JSONObject jsonObject = jsonArray.getJSONObject(i);
+                            String user = jsonObject.getString("user");
+                            JSONObject jo = new JSONObject(user);
+                            String imageUrl = jo.getString("web_url");
+                            String userName = jo.getString("user_name");
+                            String time = jsonObject.getString("input_date");
+                            String scomment = jsonObject.getString("content");
+                            int praiseNum = jsonObject.getInt("praisenum");
+                            comment = new Comment(imageUrl,userName,time,scomment,praiseNum);
+                            mCommentList.add(comment);
+                        }
+                    } catch(Exception e){
+                        e.printStackTrace();
+                    }
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Message message = new Message();
+                            message.what = UPDATE_COMMENT;
+                            handler.sendMessage(message);
+                        }
+                    }).start();
+                }
+                @Override
+                public void onError(Exception e) {
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Message message = new Message();
+                            message.what = TOAST;
+                            handler.sendMessage(message);
+                        }
+                    }).start();
+                }
+            });
+        }else{
+            Comment comment = null;
+            try{
+                mCache.put("http://v3.wufazhuce.com:8000/api/comment/praiseandtime/" + type + "/"
+                        + itemId + "/0?&platform=android",jsonComment,CacheUtil.TIME_HOUR);
+                String data = jsonAuthor.getString("data");
+                JSONArray jsonArray = new JSONArray(data);
+                for(int i = 0; i < jsonArray.length();i++){
+                    JSONObject jsonObject = jsonArray.getJSONObject(i);
+                    String user = jsonObject.getString("user");
+                    JSONObject jo = new JSONObject(user);
+                    String imageUrl = jo.getString("web_url");
+                    String userName = jo.getString("user_name");
+                    String time = jsonObject.getString("input_date");
+                    String scomment = jsonObject.getString("content");
+                    int praiseNum = jsonObject.getInt("praisenum");
+                    comment = new Comment(imageUrl,userName,time,scomment,praiseNum);
+                    mCommentList.add(comment);
+                }
+            } catch(Exception e){
+                e.printStackTrace();
+            }
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    Message message = new Message();
+                    message.what = UPDATE_COMMENT;
+                    handler.sendMessage(message);
+                }
+            }).start();
+        }
+    }
+
+    private void initContent() {
+        jsonObjectArticle = mCache.getAsJSONObject(address);
+        if(jsonObjectArticle == null) {
+            HttpUtil.sendHttpRequest(address, new HttpCallbackListener() {
+                @Override
+                public void onFinish(final String response) {
+                    try {
+                        jsonObjectArticle = new JSONObject(response);
+                        mCache.put(address,jsonObjectArticle,CacheUtil.TIME_HOUR);
+                        title = jsonObjectArticle.optString("hp_title");
+                        result = jsonObjectArticle.optString("hp_content");
+                        String author = jsonObjectArticle.optString("hp_author");
+                        titleInfo = "文/" + author;
+                        introauthor = jsonObjectArticle.optString("hp_author_introduce");
+                        copyright = jsonObjectArticle.optString("copyright");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Message message = new Message();
+                            message.what = UPDATE_TEXT;
+                            handler.sendMessage(message);
+                        }
+                    }).start();
+                }
+
+                @Override
+                public void onError(Exception e) {
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Message message = new Message();
+                            message.what = TOAST;
+                            handler.sendMessage(message);
+                        }
+                    }).start();
+                }
+            });
+        }else{
+            try {
+                mCache.put(address,jsonObjectArticle,CacheUtil.TIME_HOUR);
+                title = jsonObjectArticle.optString("hp_title");
+                result = jsonObjectArticle.optString("hp_content");
+                String author = jsonObjectArticle.optString("hp_author");
+                titleInfo = "文/" + author;
+                introauthor = jsonObjectArticle.optString("hp_author_introduce");
+                copyright = jsonObjectArticle.optString("copyright");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    Message message = new Message();
+                    message.what = UPDATE_TEXT;
+                    handler.sendMessage(message);
+                }
+            }).start();
+        }
     }
 
     Html.ImageGetter imageGetter = new Html.ImageGetter() {
@@ -448,7 +592,7 @@ public class ContentActivity extends AppCompatActivity {
                 try {
                     is = (InputStream) new URL(s).getContent();
                     drawable = Drawable.createFromStream(is, "src");
-                    mCache.put(s,drawable,12 * ACache.TIME_HOUR);
+                    mCache.put(s,drawable,12 * CacheUtil.TIME_HOUR);
                     is.close();
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -475,7 +619,7 @@ public class ContentActivity extends AppCompatActivity {
                 try {
                     InputStream in = new java.net.URL(urldisplay).openStream();
                     mIcon11 = BitmapFactory.decodeStream(in);
-                    mCache.put(urldisplay,mIcon11,12 * ACache.TIME_HOUR);
+                    mCache.put(urldisplay,mIcon11,12 * CacheUtil.TIME_HOUR);
                 } catch (Exception e) {
                     LogUtil.e("Error", e.getMessage());
                     e.printStackTrace();

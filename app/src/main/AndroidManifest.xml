@@ -34,6 +34,8 @@
             android:label="Music"></activity>
         <activity android:name="com.wushiqian.activity.FilmActivity"
             android:label="Film"></activity>
+        <activity android:name="com.wushiqian.activity.PictureDetailActivity"
+            android:label="PictureDetail"></activity>
     </application>
 
 </manifest>

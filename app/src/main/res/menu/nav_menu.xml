@@ -21,5 +21,9 @@
             android:id="@+id/nav_film"
             android:icon="@drawable/nav_film"
             android:title="Film"/>
+        <item
+            android:id="@+id/nav_about"
+            android:icon="@drawable/about"
+            android:title="About"/>
     </group>
 </menu>
