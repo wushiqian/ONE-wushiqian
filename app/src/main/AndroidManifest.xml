@@ -36,6 +36,8 @@
             android:label="Film"></activity>
         <activity android:name="com.wushiqian.activity.PictureDetailActivity"
             android:label="PictureDetail"></activity>
+        <activity android:name="com.wushiqian.activity.AboutActivity"
+            android:label="About"></activity>
     </application>
 
 </manifest>

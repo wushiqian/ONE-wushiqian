@@ -16,19 +16,20 @@ import android.widget.TextView;
 import com.example.wushiqian.one_wushiqian.R;
 import com.wushiqian.bean.ArticleListItem;
 
+
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 
-public class Myadaper extends BaseAdapter {
+public class ArticleAdaper extends BaseAdapter {
 
     private List<ArticleListItem> list;
     private ListView listView;
     private LruCache<String, BitmapDrawable> mImageCache;
 
-    public Myadaper(List<ArticleListItem> list) {
+    public ArticleAdaper(List<ArticleListItem> list) {
         super();
         this.list = list;
         int maxCache = (int) Runtime.getRuntime().maxMemory();
@@ -93,7 +94,7 @@ public class Myadaper extends BaseAdapter {
         TextView title, summary;
     }
 
-    class ImageTask extends AsyncTask<String, Void, BitmapDrawable> {
+    class ImageTask extends AsyncTask<String, Void, BitmapDrawable>{
 
         private String imageUrl;
 

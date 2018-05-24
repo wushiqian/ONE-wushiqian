@@ -14,6 +14,6 @@ public class TimeUtil {
         return date;
     }
 
-    public TimeUtil(){}
+    public TimeUtil(){}//不可实例化
 
 }

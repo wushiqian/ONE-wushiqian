@@ -84,12 +84,16 @@ public class MusicAdapter extends BaseAdapter {
         holder.title.setText(music.getTitle());
         holder.forward.setText(music.getForward());
         holder.iv.setTag(music.getImageUrl());
+        holder.iv.setImageResource(R.drawable.one);
+
         // 如果本地已有缓存，就从本地读取，否则从网络请求数据
-        if (mImageCache.get(music.getImageUrl()) != null) {
-            holder.iv.setImageDrawable(mImageCache.get(music.getImageUrl()));
-        } else {
-            ImageTask it = new ImageTask();
-            it.execute(music.getImageUrl());
+        if(holder.iv.getTag()!=null && holder.iv.getTag().equals(list.get(position).getImageUrl())) { //解决错位，闪烁的问题
+            if (mImageCache.get(music.getImageUrl()) != null ) {
+                holder.iv.setImageDrawable(mImageCache.get(music.getImageUrl()));
+            } else {
+                ImageTask it = new ImageTask();
+                it.execute(music.getImageUrl());
+            }
         }
         return convertView;
     }

@@ -21,6 +21,7 @@ import com.example.wushiqian.one_wushiqian.R;
 import com.wushiqian.adapter.MusicAdapter;
 import com.wushiqian.bean.Music;
 import com.wushiqian.ui.LoadMoreListView;
+import com.wushiqian.util.ApiUtil;
 import com.wushiqian.util.CacheUtil;
 import com.wushiqian.util.HttpCallbackListener;
 import com.wushiqian.util.HttpUtil;
@@ -35,17 +36,17 @@ import java.util.List;
 public class MusicActivity extends AppCompatActivity{
 
     private static final String TAG = "MusicActivity";
-    LoadMoreListView mListView ;
-    Toolbar toolbar;
+    private LoadMoreListView mListView ;
+    private Toolbar toolbar;
     private List<Music> mMusicList = new ArrayList<>();
     private SwipeRefreshLayout swipeRefresh;
-    public static final int TOAST = 1;
-    public static final int UPDATE = 2;
+    private  static final int TOAST = 1;
+    private  static final int UPDATE = 2;
     private int nextList = 0;
-    MusicAdapter adapter;
+    private MusicAdapter adapter;
     private CacheUtil mCache;
-    Music music = null;
-    JSONArray jsonArray ;
+    private Music music = null;
+    private JSONArray jsonArray ;
     private float scaledTouchSlop;
     private float firstY = 0;
     private ObjectAnimator animtor;
@@ -181,7 +182,8 @@ public class MusicActivity extends AppCompatActivity{
                 int itemId = music.getItemId();
                 Intent intent = new Intent(MusicActivity.this,ContentActivity.class);
                 intent.putExtra("extra_data",itemId);
-                intent.putExtra("url","http://v3.wufazhuce.com:8000/api/music/detail/" + itemId + "?channel=wdj&version=4.0.2&uuid=ffffffff-a90e-706a-63f7-ccf973aae5ee&platform=android" );
+                intent.putExtra("url",ApiUtil.MUSIC_DETAIL_URL_PRE
+                        + itemId + ApiUtil.MUSIC_DETAIL_URL_SUF );
                 intent.putExtra("type","music");
                 startActivity(intent);
             }
@@ -206,19 +208,20 @@ public class MusicActivity extends AppCompatActivity{
         initArticle();
         adapter.notifyDataSetChanged();
         mListView.setLoadCompleted();
+        mListView.setSelection(mMusicList.size()-10);
     }
 
     private void initArticle() {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                jsonArray = mCache.getAsJSONArray("http://v3.wufazhuce.com:8000/api/channel/music/more/"
-                        + nextList + "?channel=wdj&version=4.0.2&uuid=ffffffff-a90e-706a-63f7-ccf973aae5ee&platform=android");
+                jsonArray = mCache.getAsJSONArray(ApiUtil.MUSIC_LIST_URL_PRE + nextList
+                        + ApiUtil.MUSIC_LIST_URL_SUF);
                 if (jsonArray != null) {
                     LogUtil.d("MusicActivity","缓存加载");
                     try{
-                        mCache.put("http://v3.wufazhuce.com:8000/api/channel/music/more/"
-                                + nextList + "?channel=wdj&version=4.0.2&uuid=ffffffff-a90e-706a-63f7-ccf973aae5ee&platform=android",jsonArray, CacheUtil.TIME_HOUR);
+                        mCache.put(ApiUtil.MUSIC_LIST_URL_PRE + nextList
+                                + ApiUtil.MUSIC_LIST_URL_SUF,jsonArray, CacheUtil.TIME_HOUR);
                         for(int i = 0; i < jsonArray.length();i++){
                             JSONObject jsonObject = jsonArray.getJSONObject(i);
                             String title = jsonObject.getString("title");
@@ -239,8 +242,8 @@ public class MusicActivity extends AppCompatActivity{
                     handler.sendMessage(message);
                 }else{
                     LogUtil.d("MusicActivity","网络加载");
-                    HttpUtil.sendHttpRequest("http://v3.wufazhuce.com:8000/api/channel/music/more/"
-                            + nextList + "?channel=wdj&version=4.0.2&uuid=ffffffff-a90e-706a-63f7-ccf973aae5ee&platform=android", new HttpCallbackListener() {
+                    HttpUtil.sendHttpRequest(ApiUtil.MUSIC_LIST_URL_PRE + nextList
+                            + ApiUtil.MUSIC_LIST_URL_SUF, new HttpCallbackListener() {
                         @Override
                         public void onFinish(final String response) {
                             try{

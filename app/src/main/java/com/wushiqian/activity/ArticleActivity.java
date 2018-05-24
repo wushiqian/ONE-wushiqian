@@ -14,13 +14,13 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.widget.AdapterView;
-import android.widget.ListView;
 import android.widget.Toast;
 
 import com.example.wushiqian.one_wushiqian.R;
-import com.wushiqian.adapter.Myadaper;
+import com.wushiqian.adapter.ArticleAdaper;
 import com.wushiqian.bean.ArticleListItem;
 import com.wushiqian.ui.LoadMoreListView;
+import com.wushiqian.util.ApiUtil;
 import com.wushiqian.util.CacheUtil;
 import com.wushiqian.util.HttpCallbackListener;
 import com.wushiqian.util.HttpUtil;
@@ -42,7 +42,7 @@ public class ArticleActivity extends AppCompatActivity {
     public static final int TOAST = 1;
     public static final int UPDATE = 2;
     private int nextList = 0;
-    private Myadaper adapter;
+    private ArticleAdaper adapter;
     private JSONArray jsonArray;
     private CacheUtil mCache;
     private float scaledTouchSlop;
@@ -56,7 +56,7 @@ public class ArticleActivity extends AppCompatActivity {
                     Toast.makeText(ArticleActivity.this,"error",Toast.LENGTH_SHORT).show();
                     break;
                 case  UPDATE:
-                    adapter = new Myadaper(articleList);
+                    adapter = new ArticleAdaper(articleList);
                     mListView.setAdapter(adapter);
                 default: break;
             }
@@ -202,7 +202,7 @@ public class ArticleActivity extends AppCompatActivity {
                 int itemId = articleListItem.getItemId();
                 Intent intent = new Intent(ArticleActivity.this,ContentActivity.class);
                 intent.putExtra("extra_data",itemId);
-                intent.putExtra("url","http://v3.wufazhuce.com:8000/api/essay/" + itemId + "?channel=wdj&source=channel_reading&source_id=9264&version=4.0.2&uuid=ffffffff-a90e-706a-63f7-ccf973aae5ee&platform=android");
+                intent.putExtra("url",ApiUtil.ARTICLE_DETAIL_URL_PRE + itemId + ApiUtil.ARTICLE_DETAIL_URL_SUF);
                 intent.putExtra("type","essay");
                 startActivity(intent);
             }
@@ -218,14 +218,12 @@ public class ArticleActivity extends AppCompatActivity {
     }
 
     private void initArticle() {
-        jsonArray = mCache.getAsJSONArray("http://v3.wufazhuce.com:8000/api/channel/reading/more/"
-                + nextList + "?channel=wdj&version=4.0.2&uuid=ffffffff-a90e-706a-63f7-ccf973aae5ee&platform=android");
+        jsonArray = mCache.getAsJSONArray(ApiUtil.ARTICLE_LIST_URL_PRE + nextList + ApiUtil.ARTICLE_LIST_URL_SUF);
         if (jsonArray != null) {
             LogUtil.d(TAG,"缓存加载");
             ArticleListItem articleListItem = null;
             try{
-                mCache.put("http://v3.wufazhuce.com:8000/api/channel/reading/more/"
-                        + nextList + "?channel=wdj&version=4.0.2&uuid=ffffffff-a90e-706a-63f7-ccf973aae5ee&platform=android",jsonArray, CacheUtil.TIME_HOUR);
+                mCache.put(ApiUtil.ARTICLE_LIST_URL_PRE + nextList + ApiUtil.ARTICLE_LIST_URL_SUF,jsonArray, CacheUtil.TIME_HOUR);
                 for(int i = 0; i < jsonArray.length();i++){
                     JSONObject jsonObject = jsonArray.getJSONObject(i);
                     String title = jsonObject.getString("title");
@@ -246,15 +244,13 @@ public class ArticleActivity extends AppCompatActivity {
             message.what = UPDATE;
             handler.sendMessage(message);
         }else{
-            HttpUtil.sendHttpRequest("http://v3.wufazhuce.com:8000/api/channel/reading/more/"
-                    + nextList + "?channel=wdj&version=4.0.2&uuid=ffffffff-a90e-706a-63f7-ccf973aae5ee&platform=android", new HttpCallbackListener() {
+            HttpUtil.sendHttpRequest(ApiUtil.ARTICLE_LIST_URL_PRE + nextList + ApiUtil.ARTICLE_LIST_URL_SUF, new HttpCallbackListener() {
             @Override
             public void onFinish(final String response) {
                 try {
                     ArticleListItem articleListItem = null;
                     jsonArray = new JSONArray(response);
-                    mCache.put("http://v3.wufazhuce.com:8000/api/channel/reading/more/"
-                            + nextList + "?channel=wdj&version=4.0.2&uuid=ffffffff-a90e-706a-63f7-ccf973aae5ee&platform=android",jsonArray,CacheUtil.TIME_HOUR);
+                    mCache.put(ApiUtil.ARTICLE_LIST_URL_PRE + nextList + ApiUtil.ARTICLE_LIST_URL_SUF,jsonArray,CacheUtil.TIME_HOUR);
                     for (int i = 0; i < jsonArray.length(); i++) {
                         JSONObject jsonObject = jsonArray.getJSONObject(i);
                         String title = jsonObject.getString("title");

@@ -23,8 +23,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:dividerHeight="0dp"
-                android:stackFromBottom="true"
-                android:transcriptMode="disabled"
                 android:divider="#ffffff"/>
 
     </android.support.v4.widget.SwipeRefreshLayout>

@@ -13,30 +13,27 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.Toolbar;
 
 import com.example.wushiqian.one_wushiqian.R;
-import com.wushiqian.bean.RotateBean;
 import com.wushiqian.util.HttpCallbackListener;
 import com.wushiqian.util.HttpUtil;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.InputStream;
 
 class PictureDetailActivity extends AppCompatActivity{
 
-    String address ;
-    String imageUrl = "";
-    String message = "";
-    String content = "";
-    String text = "";
-    TextView mTvMessage;
-    TextView mTvContent;
-    TextView mTvText;
-    ImageView mIvPic;
-    android.support.v7.widget.Toolbar toolbar;
+    private String address ;
+    private String imageUrl = "";
+    private String message = "";
+    private String content = "";
+    private String text = "";
+    private TextView mTvMessage;
+    private TextView mTvContent;
+    private TextView mTvText;
+    private ImageView mIvPic;
+    private android.support.v7.widget.Toolbar toolbar;
 
     public static final int TOAST = 1;
     public static final int DATA = 2;

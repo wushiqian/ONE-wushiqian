@@ -23,6 +23,7 @@ import com.wushiqian.adapter.MusicAdapter;
 import com.wushiqian.bean.Film;
 import com.wushiqian.bean.Music;
 import com.wushiqian.ui.LoadMoreListView;
+import com.wushiqian.util.ApiUtil;
 import com.wushiqian.util.CacheUtil;
 import com.wushiqian.util.HttpCallbackListener;
 import com.wushiqian.util.HttpUtil;
@@ -36,20 +37,20 @@ import java.util.List;
 
 public class FilmActivity extends AppCompatActivity{
 
-    LoadMoreListView mListView ;
-    Toolbar toolbar;
+    private LoadMoreListView mListView ;
+    private Toolbar toolbar;
     private List<Film> mFilmList = new ArrayList<>();
     private SwipeRefreshLayout swipeRefresh;
-    public static final int TOAST = 1;
-    public static final int UPDATE = 2;
+    private  static final int TOAST = 1;
+    private  static final int UPDATE = 2;
     private int nextList = 0;
-    FilmAdapter adapter;
-    JSONArray jsonArray;
-    CacheUtil mCache;
+    private FilmAdapter adapter;
+    private JSONArray jsonArray;
+    private CacheUtil mCache;
     private float scaledTouchSlop;
     private float firstY = 0;
     private ObjectAnimator animtor;
-    Film film ;
+    private Film film ;
 
     private Handler handler = new Handler() {
         public void handleMessage(Message msg) {
@@ -91,7 +92,7 @@ public class FilmActivity extends AppCompatActivity{
                 int itemId = film.getItemId();
                 Intent intent = new Intent(FilmActivity.this,ContentActivity.class);
                 intent.putExtra("extra_data",itemId);
-                intent.putExtra("url","http://v3.wufazhuce.com:8000/api/movie/" + itemId + "/story/1/0?platform=android");
+                intent.putExtra("url",ApiUtil.MOVIE_DETAIL_URL_PRE + itemId + ApiUtil.MOVIE_DETAIL_URL_SUF);
                 intent.putExtra("type","movie");
                 startActivity(intent);
             }
@@ -206,13 +207,11 @@ public class FilmActivity extends AppCompatActivity{
     }
 
     private void initArticle() {
-        jsonArray = mCache.getAsJSONArray("http://v3.wufazhuce.com:8000/api/channel/movie/more/"
-                + nextList + "?channel=wdj&version=4.0.2&uuid=ffffffff-a90e-706a-63f7-ccf973aae5ee&platform=android");
+        jsonArray = mCache.getAsJSONArray(ApiUtil.MOVIE_LIST_URL_PRE + nextList + ApiUtil.MOVIE_LIST_URL_SUF);
         if (jsonArray != null) {
             LogUtil.d("MusicActivity","缓存加载");
             try{
-                mCache.put("http://v3.wufazhuce.com:8000/api/channel/movie/more/"
-                        + nextList + "?channel=wdj&version=4.0.2&uuid=ffffffff-a90e-706a-63f7-ccf973aae5ee&platform=android",jsonArray,CacheUtil.TIME_DAY);
+                mCache.put(ApiUtil.MOVIE_LIST_URL_PRE + nextList + ApiUtil.MOVIE_LIST_URL_SUF,jsonArray,CacheUtil.TIME_DAY);
                 for(int i = 0; i < jsonArray.length();i++){
                     JSONObject jsonObject = jsonArray.getJSONObject(i);
                     String title = jsonObject.getString("title");
@@ -230,8 +229,8 @@ public class FilmActivity extends AppCompatActivity{
             message.what = UPDATE;
             handler.sendMessage(message);
         }else {
-            HttpUtil.sendHttpRequest("http://v3.wufazhuce.com:8000/api/channel/movie/more/"
-                    + nextList + "?channel=wdj&version=4.0.2&uuid=ffffffff-a90e-706a-63f7-ccf973aae5ee&platform=android", new HttpCallbackListener() {
+            HttpUtil.sendHttpRequest(ApiUtil.MOVIE_LIST_URL_PRE + nextList
+                    + ApiUtil.MOVIE_LIST_URL_SUF, new HttpCallbackListener() {
                 @Override
                 public void onFinish(final String response) {
                     try {

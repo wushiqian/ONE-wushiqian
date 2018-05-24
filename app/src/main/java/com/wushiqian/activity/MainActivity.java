@@ -22,17 +22,13 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.wushiqian.one_wushiqian.R;
-import com.wushiqian.adapter.LooperPagerAdapter;
-import com.wushiqian.bean.Picture;
-import com.wushiqian.bean.RotateBean;
-import com.wushiqian.db.DBManager;
-import com.wushiqian.db.MyDatabaseHelper;
+import com.wushiqian.adapter.ViewPagerAdapter;
 import com.wushiqian.ui.MyViewPager;
+import com.wushiqian.util.ApiUtil;
 import com.wushiqian.util.HttpCallbackListener;
 import com.wushiqian.util.HttpUtil;
 import com.wushiqian.util.LogUtil;
@@ -49,11 +45,9 @@ public class MainActivity extends AppCompatActivity implements MyViewPager.OnVie
 
     private static final String TAG = "MainActivity";
     private MyViewPager mLoopPager;
-    private LooperPagerAdapter mLooperPagerAdapter;
+    private ViewPagerAdapter mPagerAdapter;
 
-    private static List<RotateBean> sPics = new ArrayList<>();
-    private List<String> urlList = new ArrayList<>();
-
+    private static List<com.wushiqian.bean.Picture> sPics = new ArrayList<>();
 
     public static final int UPDATE_TEXT = 1;
     public static final int TOAST = 2;
@@ -77,9 +71,9 @@ public class MainActivity extends AppCompatActivity implements MyViewPager.OnVie
     private TextView mTvContent;
     private TextView mTvText;
     private ImageView mIvPic;
-    private TextView mTvarticleTitle;
-    private TextView mTvarticleAuthor;
-    private TextView mTvarticleForward;
+    private TextView mTvArticleTitle;
+    private TextView mTvArticleAuthor;
+    private TextView mTvArticleForward;
     private ImageView mIvArticle;
 
     @Override
@@ -88,24 +82,24 @@ public class MainActivity extends AppCompatActivity implements MyViewPager.OnVie
         setContentView(R.layout.activity_main);
         mdate = TimeUtil.getTimeByCalendar();
         LogUtil.d(MainActivity.TAG,"今天是" + mdate);
-//        MyDatabaseHelper
-        init();
-        initPicture();
-        initPics();
         mIvPic = findViewById(R.id.main_iv);
         mTvMessage = findViewById(R.id.main_tv_message);
         mTvContent = findViewById(R.id.mian_pic_content);
         mTvText = findViewById(R.id.main_tv_text);
-        mTvarticleAuthor = findViewById(R.id.main_summary);
-        mTvarticleTitle = findViewById(R.id.main_title);
-        mTvarticleForward = findViewById(R.id.main_forward);
+        mTvArticleAuthor = findViewById(R.id.main_summary);
+        mTvArticleTitle = findViewById(R.id.main_title);
+        mTvArticleForward = findViewById(R.id.main_forward);
         mIvArticle = findViewById(R.id.main_iv_article);
+        init();
+        initPicture();
+        initPics();
         initView();
         initArticle();
     }
 
     private void initPics() {
-        HttpUtil.sendHttpRequest("http://v3.wufazhuce.com:8000/api/hp/bymonth/" + mdate + "%2000:00:00?channel=wdj&version=4.0.2&uuid=ffffffff-a90e-706a-63f7-ccf973aae5ee&platform=android", new HttpCallbackListener() {
+        HttpUtil.sendHttpRequest(ApiUtil.MAIN_PICTURE_URL_PRE + mdate
+                + ApiUtil.MAIN_PICTURE_URL_SUF, new HttpCallbackListener() {
             @Override
             public void onFinish(final String data) {
                 try{
@@ -125,21 +119,17 @@ public class MainActivity extends AppCompatActivity implements MyViewPager.OnVie
             }
             @Override
             public void onError(Exception e) {
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Message message = new Message();
-                        message.what = TOAST;
-                        mHandler.sendMessage(message);
-                    }
-                }).start();
+                Message message = new Message();
+                message.what = TOAST;
+                mHandler.sendMessage(message);
             }
         });
-        sPics.add(new RotateBean("https://www.baidu.com/img/bd_logo1.png?where=super"));
+        sPics.add(new com.wushiqian.bean.Picture("https://ss3.bdstatic.com/70cFv8Sh_Q1YnxGkpoWK1HF6hhy/it/u=4265651613,3028249006&fm=27&gp=0.jpg"));
     }
 
     private void initArticle() {
-        HttpUtil.sendHttpRequest("http://v3.wufazhuce.com:8000/api/essay/bymonth/" + mdate + "%2000:00:00?channel=wdj&version=4.0.2&uuid=ffffffff-a90e-706a-63f7-ccf973aae5ee&platform=android", new HttpCallbackListener() {
+        HttpUtil.sendHttpRequest(ApiUtil.MAIN_ARTICLE_URL_PRE + mdate
+                + ApiUtil.MAIN_ARTICLE_URL_SUF, new HttpCallbackListener() {
             @Override
             public void onFinish(final String response) {
                 try{
@@ -174,8 +164,8 @@ public class MainActivity extends AppCompatActivity implements MyViewPager.OnVie
     }
 
     private void initPicture() {
-        HttpUtil.sendHttpRequest("http://v3.wufazhuce.com:8000/api/hp/bymonth/"
-                + mdate + "%2000:00:00?channel=wdj&version=4.0.2&uuid=ffffffff-a90e-706a-63f7-ccf973aae5ee&platform=android", new HttpCallbackListener() {
+        HttpUtil.sendHttpRequest(ApiUtil.MAIN_PICTURE_URL_PRE + mdate
+                + ApiUtil.MAIN_PICTURE_URL_SUF, new HttpCallbackListener() {
             @Override
             public void onFinish(final String data) {
                 try{
@@ -251,6 +241,8 @@ public class MainActivity extends AppCompatActivity implements MyViewPager.OnVie
                         break;
                     case R.id.nav_about:
                         Toast.makeText(MainActivity.this, "next version", Toast.LENGTH_SHORT).show();
+                        intent = new Intent(MainActivity.this,AboutActivity.class);
+                        startActivity(intent);
                         break;
                 }
                     mDrawerLayout.closeDrawers();
@@ -279,9 +271,9 @@ public class MainActivity extends AppCompatActivity implements MyViewPager.OnVie
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case UPDATE_TEXT:
-                    sPics.add(new RotateBean(imageUrl));
-                    sPics.add(new RotateBean(imageUrl1));
-                    sPics.add(new RotateBean(imageUrl2));
+                    sPics.add(new com.wushiqian.bean.Picture(imageUrl));
+                    sPics.add(new com.wushiqian.bean.Picture(imageUrl1));
+                    sPics.add(new com.wushiqian.bean.Picture(imageUrl2));
                     break;
                 case  TOAST:
                     Toast.makeText(MainActivity.this,"error",Toast.LENGTH_SHORT).show();
@@ -293,9 +285,9 @@ public class MainActivity extends AppCompatActivity implements MyViewPager.OnVie
                     new DownloadImageTask(mIvPic)
                             .execute("" + imageUrl);
                 case ARTICLE:
-                    mTvarticleAuthor.setText(articleAuthor);
-                    mTvarticleForward.setText(articleForward);
-                    mTvarticleTitle.setText(articleTitle);
+                    mTvArticleAuthor.setText(articleAuthor);
+                    mTvArticleForward.setText(articleForward);
+                    mTvArticleTitle.setText(articleTitle);
                 default: break;
             }
         }
@@ -352,15 +344,15 @@ public class MainActivity extends AppCompatActivity implements MyViewPager.OnVie
         //就是找到这个viewPager控件
         mLoopPager = this.findViewById(R.id.looper_pager);
         //设置适配器
-        mLooperPagerAdapter = new LooperPagerAdapter();
-        mLooperPagerAdapter.setData(sPics);
-        mLoopPager.setAdapter(mLooperPagerAdapter);
+        mPagerAdapter = new ViewPagerAdapter();
+        mPagerAdapter.setData(sPics);
+        mLoopPager.setAdapter(mPagerAdapter);
         mLoopPager.setOnViewPagerTouchListener(MainActivity.this);
         mLoopPager.addOnPageChangeListener(MainActivity.this);
         mPointContainer = this.findViewById(R.id.points_container);
         //根据图片的个数,去添加点的个数
         insertPoint();
-        mLoopPager.setCurrentItem(mLooperPagerAdapter.getDataRealSize() * 100, true);
+        mLoopPager.setCurrentItem(mPagerAdapter.getDataRealSize() * 100, true);
     }
 
     private void insertPoint() {
@@ -389,8 +381,8 @@ public class MainActivity extends AppCompatActivity implements MyViewPager.OnVie
     public void onPageSelected(int position) {
         //这个方法的调用,其实是viewPager停下来以后选中的位置
         int realPosition;
-        if (mLooperPagerAdapter.getDataRealSize() != 0) {
-            realPosition = position % mLooperPagerAdapter.getDataRealSize();
+        if (mPagerAdapter.getDataRealSize() != 0) {
+            realPosition = position % mPagerAdapter.getDataRealSize();
         } else {
             realPosition = 0;
         }

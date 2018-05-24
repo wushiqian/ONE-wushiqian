@@ -4,13 +4,11 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.support.v4.view.PagerAdapter;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
-import com.wushiqian.activity.MainActivity;
-import com.wushiqian.bean.RotateBean;
+import com.wushiqian.bean.Picture;
 import com.wushiqian.util.CacheUtil;
 import com.wushiqian.util.LogUtil;
 import com.wushiqian.util.MyApplication;
@@ -18,10 +16,10 @@ import com.wushiqian.util.MyApplication;
 import java.io.InputStream;
 import java.util.List;
 
-public class LooperPagerAdapter extends PagerAdapter {
+public class ViewPagerAdapter extends PagerAdapter {
 
-    private static final String TAG = "LooperPagerAdapter";
-    private List<RotateBean> mPics = null;
+    private static final String TAG = "PagerAdapter";
+    private List<Picture> mPics = null;
     private CacheUtil mCache;
 
     @Override
@@ -39,7 +37,7 @@ public class LooperPagerAdapter extends PagerAdapter {
         imageView.setScaleType(ImageView.ScaleType.FIT_XY);
         //imageView.setBackgroundColor(mPics.get(position));
         new DownloadImageTask(imageView)
-                .execute("" + mPics.get(realPosition).getImgUrl());
+                .execute("" + mPics.get(realPosition).getImageUrl());
 //        imageView.setImageResource(mPics.get(realPosition).getImgId());
         //设置完数据以后,就添加到容器里
         container.addView(imageView);
@@ -56,7 +54,7 @@ public class LooperPagerAdapter extends PagerAdapter {
         return view == object;
     }
 
-    public void setData(List<RotateBean> colos) {
+    public void setData(List<Picture> colos) {
         this.mPics = colos;
     }
 

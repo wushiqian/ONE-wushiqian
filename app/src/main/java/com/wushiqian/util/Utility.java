@@ -9,7 +9,6 @@ import java.util.List;
 public class Utility {
 
     public static String parseJSON(String data){
-//        String title="";
         String message="";
         try {
             //第一步：将从网络字符串jsonData字符串装入JSONObject

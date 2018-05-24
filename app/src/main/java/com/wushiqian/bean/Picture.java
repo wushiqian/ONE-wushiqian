@@ -38,11 +38,17 @@ public class Picture {
         this.message = message;
     }
 
+    public Picture(String imageUrl){
+        this.imageUrl = imageUrl;
+    }
+
     public Picture(int itemId){
         this.itemId = itemId;
     }
 
-//    public Picture getPicture(int itemId){
-//
-//    }
+    public Picture(int itemId,String imageUrl){
+        this.itemId = itemId;
+        this.imageUrl = imageUrl;
+    }
+
 }

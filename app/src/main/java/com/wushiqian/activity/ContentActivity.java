@@ -24,6 +24,7 @@ import com.example.wushiqian.one_wushiqian.R;
 import com.wushiqian.adapter.CommentAdapter;
 import com.wushiqian.bean.Comment;
 import com.wushiqian.ui.LoadMoreListView;
+import com.wushiqian.util.ApiUtil;
 import com.wushiqian.util.CacheUtil;
 import com.wushiqian.util.HttpCallbackListener;
 import com.wushiqian.util.HttpUtil;
@@ -48,42 +49,42 @@ import java.util.List;
 
 public class ContentActivity extends AppCompatActivity {
 
-    public static final String TAG = "ContentActivity";
-    android.support.v7.widget.Toolbar mToolbar;
-    public static final int UPDATE_TEXT = 1;
-    public static final int TOAST = 2;
-    public static final int UPDATE_COMMENT = 3;
-    public static final int UPDATE_AUTHOR = 4;
+    private static final String TAG = "ContentActivity";
+    private android.support.v7.widget.Toolbar mToolbar;
+    private static final int UPDATE_TEXT = 1;
+    private static final int TOAST = 2;
+    private static final int UPDATE_COMMENT = 3;
+    private static final int UPDATE_AUTHOR = 4;
     private List<Comment> mCommentList = new ArrayList<>();
-    CommentAdapter adapter;
-    String result = "";
-    TextView mTextView;
-    TextView mTvTitle;
-    TextView mTvAuthor;
-    TextView mTvIntroduce;
-    LoadMoreListView mTvComment;
-    ImageView mIvauthor;
-    ImageView mIvCover;
+    private CommentAdapter adapter;
+    private String result = "";
+    private TextView mTextView;
+    private TextView mTvTitle;
+    private TextView mTvAuthor;
+    private TextView mTvIntroduce;
+    private LoadMoreListView mTvComment;
+    private ImageView mIvauthor;
+    private ImageView mIvCover;
     private TextView mTvright;
     private TextView mTvAuthorName;
     private TextView mTvDesc;
-    String author = "";
-    int itemId;
-    String title = "";
-    String introauthor = "";
-    String address = "";
-    String type = "";
-    String copyright = "";
-    String authorImaUrl = "";
-    String authorDesc = "";
-    String coverUrl = "";
-    String titleInfo = "";
-    JSONObject jsonObject;
+    private String author = "";
+    private int itemId;
+    private String title = "";
+    private String introauthor = "";
+    private String address = "";
+    private String type = "";
+    private String copyright = "";
+    private String authorImaUrl = "";
+    private String authorDesc = "";
+    private String coverUrl = "";
+    private String titleInfo = "";
+    private JSONObject jsonObject;
     private CacheUtil mCache;
-    JSONObject jsonObjectMovie;
-    JSONObject jsonAuthor;
-    JSONObject jsonComment;
-    JSONObject jsonObjectArticle;
+    private JSONObject jsonObjectMovie;
+    private JSONObject jsonAuthor;
+    private JSONObject jsonComment;
+    private JSONObject jsonObjectArticle;
 
     private Handler handler = new Handler() {
         public void handleMessage(@NonNull Message msg) {
@@ -437,10 +438,11 @@ public class ContentActivity extends AppCompatActivity {
     }
 
     private void initComment() {
-        jsonComment = mCache.getAsJSONObject("http://v3.wufazhuce.com:8000/api/comment/praiseandtime/" + type + "/" + itemId + "/0?&platform=android");
+        jsonComment = mCache.getAsJSONObject(ApiUtil.COMMENT_URL_PRE + type + "/" + itemId
+                + ApiUtil.COMMENT_URL_SUF);
         if(jsonComment == null){
-            HttpUtil.sendHttpRequest("http://v3.wufazhuce.com:8000/api/comment/praiseandtime/"
-                    + type + "/" + itemId + "/0?&platform=android", new HttpCallbackListener() {
+            HttpUtil.sendHttpRequest(ApiUtil.COMMENT_URL_PRE + type + "/" + itemId
+                    + ApiUtil.COMMENT_URL_SUF, new HttpCallbackListener() {
                 @Override
                 public void onFinish(final String response) {
                     Comment comment = null;
@@ -489,8 +491,8 @@ public class ContentActivity extends AppCompatActivity {
         }else{
             Comment comment = null;
             try{
-                mCache.put("http://v3.wufazhuce.com:8000/api/comment/praiseandtime/" + type + "/"
-                        + itemId + "/0?&platform=android",jsonComment,CacheUtil.TIME_HOUR);
+                mCache.put(ApiUtil.COMMENT_URL_PRE + type + "/" + itemId
+                        + ApiUtil.COMMENT_URL_SUF,jsonComment,CacheUtil.TIME_HOUR);
                 String data = jsonAuthor.getString("data");
                 JSONArray jsonArray = new JSONArray(data);
                 for(int i = 0; i < jsonArray.length();i++){
@@ -508,14 +510,9 @@ public class ContentActivity extends AppCompatActivity {
             } catch(Exception e){
                 e.printStackTrace();
             }
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    Message message = new Message();
-                    message.what = UPDATE_COMMENT;
-                    handler.sendMessage(message);
-                }
-            }).start();
+                Message message = new Message();
+                message.what = UPDATE_COMMENT;
+                handler.sendMessage(message);
         }
     }
 
