@@ -3,12 +3,16 @@ package com.wushiqian.util;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+/**
+* 网络申请
+* @author wushiqian
+* created at 2018/5/25 20:21
+*/
 public class HttpUtil {
 
     public static void sendHttpRequest(final String address, final HttpCallbackListener listener) {

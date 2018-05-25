@@ -15,14 +15,22 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.wushiqian.one_wushiqian.R;
+import com.wushiqian.bean.Picture;
+import com.wushiqian.util.CacheUtil;
 import com.wushiqian.util.HttpCallbackListener;
 import com.wushiqian.util.HttpUtil;
+import com.wushiqian.util.LogUtil;
 
 import org.json.JSONObject;
 
 import java.io.InputStream;
 
-class PictureDetailActivity extends AppCompatActivity{
+/**
+* 图片详情
+* @author wushiqian
+* created at 2018/5/25 20:12
+*/
+public class PictureDetailActivity extends AppCompatActivity{
 
     private String address ;
     private String imageUrl = "";
@@ -34,6 +42,7 @@ class PictureDetailActivity extends AppCompatActivity{
     private TextView mTvText;
     private ImageView mIvPic;
     private android.support.v7.widget.Toolbar toolbar;
+    private CacheUtil mCacheUtil;
 
     public static final int TOAST = 1;
     public static final int DATA = 2;
@@ -61,39 +70,57 @@ class PictureDetailActivity extends AppCompatActivity{
                 finish();
             }
         });
+        mCacheUtil = CacheUtil.get(this);
         init();
     }
 
     private void init() {
-        HttpUtil.sendHttpRequest(address, new HttpCallbackListener() {
+        new Thread(new Runnable() {
             @Override
-            public void onFinish(final String data) {
-                try{
-                    JSONObject jsonObject = new JSONObject(data);
-                    message = jsonObject.getString("hp_author");
-                    imageUrl = jsonObject.getString("hp_img_url");
-//                    message = "" + author ;
-                    content = jsonObject.getString("hp_content");
-                    text = jsonObject.getString("text_authors");
-                } catch(Exception e){
-                    e.printStackTrace();
-                }
-                Message message = new Message();
-                message.what = DATA;
-                mHandler.sendMessage(message);
-            }
-            @Override
-            public void onError(Exception e) {
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Message message = new Message();
-                        message.what = TOAST;
-                        mHandler.sendMessage(message);
+            public void run() {
+                if(mCacheUtil.getAsJSONObject(address) == null){
+                    HttpUtil.sendHttpRequest(address, new HttpCallbackListener() {
+                        @Override
+                        public void onFinish(final String data) {
+                            try{
+                                JSONObject jsonObject = new JSONObject(data);
+                                mCacheUtil.put(address,jsonObject, CacheUtil.TIME_DAY);
+                                message = jsonObject.getString("hp_author");
+                                imageUrl = jsonObject.getString("hp_img_url");
+                                content = jsonObject.getString("hp_content");
+                                text = jsonObject.getString("text_authors");
+                            } catch(Exception e){
+                                e.printStackTrace();
+                            }
+                            Message message = new Message();
+                            message.what = DATA;
+                            mHandler.sendMessage(message);
+                        }
+                        @Override
+                        public void onError(Exception e) {
+                            Message message = new Message();
+                            message.what = TOAST;
+                            mHandler.sendMessage(message);
+                        }
+                    });
+                }else{
+                    try {
+                        JSONObject jsonObject = mCacheUtil.getAsJSONObject(address);
+                        mCacheUtil.put(address,jsonObject, CacheUtil.TIME_DAY);
+                        message = jsonObject.getString("hp_author");
+                        imageUrl = jsonObject.getString("hp_img_url");
+                        content = jsonObject.getString("hp_content");
+                        text = jsonObject.getString("text_authors");
+                    } catch(Exception e){
+                        e.printStackTrace();
                     }
-                }).start();
+                    Message message = new Message();
+                    message.what = DATA;
+                    mHandler.sendMessage(message);
+                }
             }
-        });
+        }).start();
+
     }
 
     private Handler mHandler = new Handler() {

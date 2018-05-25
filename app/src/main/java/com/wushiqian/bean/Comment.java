@@ -1,5 +1,10 @@
 package com.wushiqian.bean;
 
+/**
+* 评论bean
+* @author wushiqian
+* created at 2018/5/25 20:19
+*/
 public class Comment {
 
     private String imageUrl;

@@ -27,6 +27,7 @@ import com.wushiqian.util.ApiUtil;
 import com.wushiqian.util.CacheUtil;
 import com.wushiqian.util.HttpCallbackListener;
 import com.wushiqian.util.HttpUtil;
+import com.wushiqian.util.JSONUtil;
 import com.wushiqian.util.LogUtil;
 
 import org.json.JSONArray;
@@ -35,6 +36,11 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+* 电影列表
+* @author wushiqian
+* created at 2018/5/25 20:13
+*/
 public class FilmActivity extends AppCompatActivity{
 
     private LoadMoreListView mListView ;
@@ -45,12 +51,10 @@ public class FilmActivity extends AppCompatActivity{
     private  static final int UPDATE = 2;
     private int nextList = 0;
     private FilmAdapter adapter;
-    private JSONArray jsonArray;
     private CacheUtil mCache;
     private float scaledTouchSlop;
     private float firstY = 0;
     private ObjectAnimator animtor;
-    private Film film ;
 
     private Handler handler = new Handler() {
         public void handleMessage(Message msg) {
@@ -115,7 +119,7 @@ public class FilmActivity extends AppCompatActivity{
         //判断认为是滑动的最小距离(乘以系数调整滑动灵敏度)
         scaledTouchSlop = ViewConfiguration.get(this).getScaledTouchSlop()*3.0f;
         mCache = CacheUtil.get(this);
-        initArticle();
+        initFilm();
         /**
          * 设置触摸事件
          */
@@ -201,68 +205,65 @@ public class FilmActivity extends AppCompatActivity{
     }
 
     private void loadMore() {
-                        initArticle();
-                        adapter.notifyDataSetChanged();
-                        mListView.setLoadCompleted();
+        initFilm();
+        adapter.notifyDataSetChanged();
+        mListView.setLoadCompleted();
     }
 
-    private void initArticle() {
-        jsonArray = mCache.getAsJSONArray(ApiUtil.MOVIE_LIST_URL_PRE + nextList + ApiUtil.MOVIE_LIST_URL_SUF);
-        if (jsonArray != null) {
-            LogUtil.d("MusicActivity","缓存加载");
-            try{
-                mCache.put(ApiUtil.MOVIE_LIST_URL_PRE + nextList + ApiUtil.MOVIE_LIST_URL_SUF,jsonArray,CacheUtil.TIME_DAY);
-                for(int i = 0; i < jsonArray.length();i++){
-                    JSONObject jsonObject = jsonArray.getJSONObject(i);
-                    String title = jsonObject.getString("title");
-                    String forward = "《" + jsonObject.getString("subtitle") + "》";
-                    String imageUrl = jsonObject.getString("img_url");
-                    int itemId = jsonObject.getInt("item_id");
-                    nextList = jsonObject.getInt("id");
-                    film = new Film(title,forward,itemId,imageUrl);
-                    mFilmList.add(film);
-                }
-            } catch(Exception e){
-                e.printStackTrace();
-            }
-            Message message = new Message();
-            message.what = UPDATE;
-            handler.sendMessage(message);
-        }else {
-            HttpUtil.sendHttpRequest(ApiUtil.MOVIE_LIST_URL_PRE + nextList
-                    + ApiUtil.MOVIE_LIST_URL_SUF, new HttpCallbackListener() {
-                @Override
-                public void onFinish(final String response) {
-                    try {
-                        jsonArray = new JSONArray(response);
-                        mCache.put("http://v3.wufazhuce.com:8000/api/channel/movie/more/"
-                                + nextList + "?channel=wdj&version=4.0.2&uuid=ffffffff-a90e-706a-63f7-ccf973aae5ee&platform=android",jsonArray,CacheUtil.TIME_DAY);
-                        for (int i = 0; i < jsonArray.length(); i++) {
+    private void initFilm() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if (mCache.getAsJSONArray(ApiUtil.MOVIE_LIST_URL_PRE + nextList + ApiUtil.MOVIE_LIST_URL_SUF) != null) {
+                    LogUtil.d("MusicActivity","缓存加载");
+                    try{
+                        JSONArray jsonArray = mCache.getAsJSONArray(ApiUtil.MOVIE_LIST_URL_PRE + nextList + ApiUtil.MOVIE_LIST_URL_SUF);
+                        mCache.put(ApiUtil.MOVIE_LIST_URL_PRE + nextList + ApiUtil.MOVIE_LIST_URL_SUF,jsonArray,CacheUtil.TIME_DAY);
+                        for(int i = 0; i < jsonArray.length();i++){
                             JSONObject jsonObject = jsonArray.getJSONObject(i);
-                            String title = jsonObject.getString("title");
-                            String forward = "《" + jsonObject.getString("subtitle") + "》";
-                            String imageUrl = jsonObject.getString("img_url");
-                            int itemId = jsonObject.getInt("item_id");
                             nextList = jsonObject.getInt("id");
-                            film = new Film(title, forward, itemId, imageUrl);
+                            Film film = JSONUtil.parseJSONFilm(jsonObject);
                             mFilmList.add(film);
                         }
-                    } catch (Exception e) {
+                    } catch(Exception e){
                         e.printStackTrace();
                     }
                     Message message = new Message();
                     message.what = UPDATE;
                     handler.sendMessage(message);
-                }
+                }else {
+                    HttpUtil.sendHttpRequest(ApiUtil.MOVIE_LIST_URL_PRE + nextList
+                            + ApiUtil.MOVIE_LIST_URL_SUF, new HttpCallbackListener() {
+                        @Override
+                        public void onFinish(final String response) {
+                            try {
+                                JSONArray jsonArray = new JSONArray(response);
+                                mCache.put("http://v3.wufazhuce.com:8000/api/channel/movie/more/"
+                                        + nextList + "?channel=wdj&version=4.0.2&uuid=ffffffff-a90e-706a-63f7-ccf973aae5ee&platform=android",jsonArray,CacheUtil.TIME_DAY);
+                                for (int i = 0; i < jsonArray.length(); i++) {
+                                    JSONObject jsonObject = jsonArray.getJSONObject(i);
+                                    nextList = jsonObject.getInt("id");
+                                    Film film = JSONUtil.parseJSONFilm(jsonObject);
+                                    mFilmList.add(film);
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                            Message message = new Message();
+                            message.what = UPDATE;
+                            handler.sendMessage(message);
+                        }
 
-                @Override
-                public void onError(Exception e) {
+                        @Override
+                        public void onError(Exception e) {
                             Message message = new Message();
                             message.what = TOAST;
                             handler.sendMessage(message);
+                        }
+                    });
                 }
-            });
-        }
+            }
+        }).start();
     }
 
     // 重写
@@ -284,7 +285,7 @@ public class FilmActivity extends AppCompatActivity{
     private void refreshArticle() {
         nextList = 0;
         mFilmList.clear();
-        initArticle();
+        initFilm();
         adapter.notifyDataSetChanged();
         swipeRefresh.setRefreshing(false);
     }

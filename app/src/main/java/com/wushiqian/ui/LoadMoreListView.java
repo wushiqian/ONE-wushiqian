@@ -10,7 +10,6 @@ import android.widget.ListView;
 import com.example.wushiqian.one_wushiqian.R;
 
 public class LoadMoreListView extends ListView implements AbsListView.OnScrollListener{
-
     private View mFootView;
     private int mTotalItemCount;//item总数
     private OnLoadMoreListener mLoadMoreListener;

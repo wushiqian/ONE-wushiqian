@@ -1,5 +1,10 @@
 package com.wushiqian.util;
 
+/**
+* api接口的常数类
+* @author wushiqian
+* created at 2018/5/25 20:21
+*/
 public class ApiUtil {
 
     public static final String MUSIC_LIST_URL_PRE = "http://v3.wufazhuce.com:8000/api/channel/music/more/";

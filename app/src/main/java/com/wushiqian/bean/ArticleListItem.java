@@ -1,5 +1,10 @@
 package com.wushiqian.bean;
 
+/**
+* 文章bean
+* @author wushiqian
+* created at 2018/5/25 20:18
+*/
 public class ArticleListItem {
 
     private String title;

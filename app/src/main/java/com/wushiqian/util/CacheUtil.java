@@ -30,6 +30,7 @@ import android.graphics.drawable.Drawable;
 
 /**
  * 缓存类
+ * @author yangfuhai
  */
 public class CacheUtil {
     public static final int TIME_HOUR = 60 * 60;
@@ -174,8 +175,9 @@ public class CacheUtil {
      */
     public JSONObject getAsJSONObject(String key) {
         String JSONString = getAsString(key);
+        JSONObject obj = null;
         try {
-            JSONObject obj = new JSONObject(JSONString);
+            obj = new JSONObject(JSONString);
             return obj;
         } catch (Exception e) {
             e.printStackTrace();
@@ -206,8 +208,11 @@ public class CacheUtil {
      */
     public JSONArray getAsJSONArray(String key) {
         String JSONString = getAsString(key);
+        JSONArray obj = null;
         try {
-            JSONArray obj = new JSONArray(JSONString);
+            if(JSONString != null) {
+                obj = new JSONArray(JSONString);
+            }
             return obj;
         } catch (Exception e) {
             e.printStackTrace();

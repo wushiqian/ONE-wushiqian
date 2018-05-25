@@ -1,5 +1,10 @@
 package com.wushiqian.bean;
 
+/**
+* 插画bean
+* @author wushiqian
+* created at 2018/5/25 20:20
+*/
 public class Picture {
 
     private String imageUrl;

@@ -7,6 +7,11 @@ import android.view.View;
 
 import com.example.wushiqian.one_wushiqian.R;
 
+/**
+* 关于界面
+* @author wushiqian
+* created at 2018/5/25 20:16
+*/
 public class AboutActivity extends AppCompatActivity{
 
     private Toolbar toolbar;

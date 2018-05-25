@@ -25,6 +25,11 @@ import java.util.List;
 
 import static android.widget.AbsListView.OnScrollListener.SCROLL_STATE_IDLE;
 
+/**
+* 插画列表的适配器
+* @author wushiqian
+* created at 2018/5/25 20:18
+*/
 public class PictureAdapter extends BaseAdapter {
 
     private List<Picture> list;

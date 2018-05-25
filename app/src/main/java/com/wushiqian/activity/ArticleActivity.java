@@ -24,6 +24,7 @@ import com.wushiqian.util.ApiUtil;
 import com.wushiqian.util.CacheUtil;
 import com.wushiqian.util.HttpCallbackListener;
 import com.wushiqian.util.HttpUtil;
+import com.wushiqian.util.JSONUtil;
 import com.wushiqian.util.LogUtil;
 
 import org.json.JSONArray;
@@ -32,6 +33,11 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+* 文章列表
+* @author wushiqian
+* created at 2018/5/25 20:15
+*/
 public class ArticleActivity extends AppCompatActivity {
 
     private static final String TAG = "ArticleActivity";
@@ -43,7 +49,6 @@ public class ArticleActivity extends AppCompatActivity {
     public static final int UPDATE = 2;
     private int nextList = 0;
     private ArticleAdaper adapter;
-    private JSONArray jsonArray;
     private CacheUtil mCache;
     private float scaledTouchSlop;
     private float firstY = 0;
@@ -218,24 +223,16 @@ public class ArticleActivity extends AppCompatActivity {
     }
 
     private void initArticle() {
-        jsonArray = mCache.getAsJSONArray(ApiUtil.ARTICLE_LIST_URL_PRE + nextList + ApiUtil.ARTICLE_LIST_URL_SUF);
-        if (jsonArray != null) {
+        if (mCache.getAsJSONArray(ApiUtil.ARTICLE_LIST_URL_PRE + nextList + ApiUtil.ARTICLE_LIST_URL_SUF) != null) {
             LogUtil.d(TAG,"缓存加载");
-            ArticleListItem articleListItem = null;
             try{
+                JSONArray jsonArray = mCache.getAsJSONArray(ApiUtil.ARTICLE_LIST_URL_PRE + nextList + ApiUtil.ARTICLE_LIST_URL_SUF);
                 mCache.put(ApiUtil.ARTICLE_LIST_URL_PRE + nextList + ApiUtil.ARTICLE_LIST_URL_SUF,jsonArray, CacheUtil.TIME_HOUR);
                 for(int i = 0; i < jsonArray.length();i++){
                     JSONObject jsonObject = jsonArray.getJSONObject(i);
-                    String title = jsonObject.getString("title");
-                    String author = jsonObject.getString("author");
-                    JSONObject jo = new JSONObject(author);
-                    String userName = jo.getString("user_name");
-                    String imageUrl = jsonObject.getString("img_url");
-                    int itemId = jsonObject.getInt("item_id");
                     nextList = jsonObject.getInt("id");
-                    articleListItem = new ArticleListItem(title,userName,imageUrl,itemId);
+                    ArticleListItem articleListItem = JSONUtil.parseJSONArticle(jsonObject);
                     articleList.add(articleListItem);
-                    LogUtil.d("ArticleActivity","title is" + title);
                 }
             } catch(Exception e){
                 e.printStackTrace();
@@ -248,21 +245,13 @@ public class ArticleActivity extends AppCompatActivity {
             @Override
             public void onFinish(final String response) {
                 try {
-                    ArticleListItem articleListItem = null;
-                    jsonArray = new JSONArray(response);
+                    JSONArray jsonArray = new JSONArray(response);
                     mCache.put(ApiUtil.ARTICLE_LIST_URL_PRE + nextList + ApiUtil.ARTICLE_LIST_URL_SUF,jsonArray,CacheUtil.TIME_HOUR);
                     for (int i = 0; i < jsonArray.length(); i++) {
                         JSONObject jsonObject = jsonArray.getJSONObject(i);
-                        String title = jsonObject.getString("title");
-                        String author = jsonObject.getString("author");
-                        JSONObject jo = new JSONObject(author);
-                        String userName = jo.getString("user_name");
-                        String imageUrl = jsonObject.getString("img_url");
-                        int itemId = jsonObject.getInt("item_id");
                         nextList = jsonObject.getInt("id");
-                        articleListItem = new ArticleListItem(title, userName, imageUrl, itemId);
+                        ArticleListItem articleListItem = JSONUtil.parseJSONArticle(jsonObject);
                         articleList.add(articleListItem);
-                        LogUtil.d("ArticleActivity", "title is" + title);
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -274,17 +263,12 @@ public class ArticleActivity extends AppCompatActivity {
 
             @Override
             public void onError(Exception e) {
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Message message = new Message();
-                        message.what = TOAST;
-                        handler.sendMessage(message);
-                    }
-                }).start();
+                Message message = new Message();
+                message.what = TOAST;
+                handler.sendMessage(message);
             }
         });
-            }
+        }
     }
 
     // 重写

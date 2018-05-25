@@ -2,6 +2,8 @@ package com.wushiqian.activity;
 
 import android.animation.ObjectAnimator;
 import android.content.Intent;
+import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -25,6 +27,7 @@ import com.wushiqian.util.ApiUtil;
 import com.wushiqian.util.CacheUtil;
 import com.wushiqian.util.HttpCallbackListener;
 import com.wushiqian.util.HttpUtil;
+import com.wushiqian.util.JSONUtil;
 import com.wushiqian.util.LogUtil;
 
 import org.json.JSONArray;
@@ -33,6 +36,11 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+* 音乐列表
+* @author wushiqian
+* created at 2018/5/25 20:12
+*/
 public class MusicActivity extends AppCompatActivity{
 
     private static final String TAG = "MusicActivity";
@@ -45,8 +53,6 @@ public class MusicActivity extends AppCompatActivity{
     private int nextList = 0;
     private MusicAdapter adapter;
     private CacheUtil mCache;
-    private Music music = null;
-    private JSONArray jsonArray ;
     private float scaledTouchSlop;
     private float firstY = 0;
     private ObjectAnimator animtor;
@@ -60,6 +66,8 @@ public class MusicActivity extends AppCompatActivity{
                 case  UPDATE:
                     adapter = new MusicAdapter(mMusicList);
                     mListView.setAdapter(adapter);
+                    mListView.setSelection(mMusicList.size()-10);
+                    mListView.smoothScrollToPosition(mMusicList.size()-10);
                 default: break;
             }
         }
@@ -202,37 +210,37 @@ public class MusicActivity extends AppCompatActivity{
                 loadMore();
             }
         });
+
+        if(Build.VERSION.SDK_INT >= 21){
+            View decorView = getWindow().getDecorView();
+            decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+            getWindow().setStatusBarColor(Color.TRANSPARENT);
+        }
     }
 
     private void loadMore() {
         initArticle();
         adapter.notifyDataSetChanged();
         mListView.setLoadCompleted();
-        mListView.setSelection(mMusicList.size()-10);
     }
 
     private void initArticle() {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                jsonArray = mCache.getAsJSONArray(ApiUtil.MUSIC_LIST_URL_PRE + nextList
-                        + ApiUtil.MUSIC_LIST_URL_SUF);
-                if (jsonArray != null) {
+                if ( mCache.getAsJSONArray(ApiUtil.MUSIC_LIST_URL_PRE + nextList
+                        + ApiUtil.MUSIC_LIST_URL_SUF) != null) {
                     LogUtil.d("MusicActivity","缓存加载");
                     try{
+                        JSONArray jsonArray = mCache.getAsJSONArray(ApiUtil.MUSIC_LIST_URL_PRE + nextList
+                                + ApiUtil.MUSIC_LIST_URL_SUF);
                         mCache.put(ApiUtil.MUSIC_LIST_URL_PRE + nextList
                                 + ApiUtil.MUSIC_LIST_URL_SUF,jsonArray, CacheUtil.TIME_HOUR);
-                        for(int i = 0; i < jsonArray.length();i++){
+                        for(int i = 0; i < jsonArray.length();i++) {
                             JSONObject jsonObject = jsonArray.getJSONObject(i);
-                            String title = jsonObject.getString("title");
-                            String musicName = jsonObject.getString("music_name");
-                            String musicer = jsonObject.getString("audio_author");
-                            String forward = "" + musicName + "     歌手/" + musicer;
-                            String imageUrl = jsonObject.getString("img_url");
-                            int itemId = jsonObject.getInt("item_id");
-                            nextList = jsonObject.getInt("id");
-                            music = new Music(title,forward,itemId,imageUrl);
+                            Music music = JSONUtil.parseJSONmusic(jsonObject);
                             mMusicList.add(music);
+                            nextList = jsonObject.getInt("id");
                         }
                     } catch(Exception e){
                         e.printStackTrace();
@@ -247,20 +255,14 @@ public class MusicActivity extends AppCompatActivity{
                         @Override
                         public void onFinish(final String response) {
                             try{
-                                jsonArray = new JSONArray(response);
+                                JSONArray jsonArray = new JSONArray(response);
                                 mCache.put("http://v3.wufazhuce.com:8000/api/channel/music/more/"
                                         + nextList + "?channel=wdj&version=4.0.2&uuid=ffffffff-a90e-706a-63f7-ccf973aae5ee&platform=android",jsonArray,CacheUtil.TIME_HOUR);
                                 for(int i = 0; i < jsonArray.length();i++){
                                     JSONObject jsonObject = jsonArray.getJSONObject(i);
-                                    String title = jsonObject.getString("title");
-                                    String musicName = jsonObject.getString("music_name");
-                                    String musicer = jsonObject.getString("audio_author");
-                                    String forward = "" + musicName + "     歌手/" + musicer;
-                                    String imageUrl = jsonObject.getString("img_url");
-                                    int itemId = jsonObject.getInt("item_id");
-                                    nextList = jsonObject.getInt("id");
-                                    music = new Music(title,forward,itemId,imageUrl);
+                                    Music music = JSONUtil.parseJSONmusic(jsonObject);
                                     mMusicList.add(music);
+                                    nextList = jsonObject.getInt("id");
                                 }
                             } catch(Exception e){
                                 e.printStackTrace();
@@ -271,9 +273,9 @@ public class MusicActivity extends AppCompatActivity{
                         }
                         @Override
                         public void onError(Exception e) {
-                                    Message message = new Message();
-                                    message.what = TOAST;
-                                    handler.sendMessage(message);
+                            Message message = new Message();
+                            message.what = TOAST;
+                            handler.sendMessage(message);
                         }
                     });
                 }

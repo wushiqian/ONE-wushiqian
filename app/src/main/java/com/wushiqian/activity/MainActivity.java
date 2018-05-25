@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.NonNull;
@@ -29,6 +30,7 @@ import com.example.wushiqian.one_wushiqian.R;
 import com.wushiqian.adapter.ViewPagerAdapter;
 import com.wushiqian.ui.MyViewPager;
 import com.wushiqian.util.ApiUtil;
+import com.wushiqian.util.CacheUtil;
 import com.wushiqian.util.HttpCallbackListener;
 import com.wushiqian.util.HttpUtil;
 import com.wushiqian.util.LogUtil;
@@ -40,7 +42,11 @@ import org.json.JSONObject;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-
+/**
+* 主界面，首页
+* @author wushiqian
+* created at 2018/5/25 20:13
+*/
 public class MainActivity extends AppCompatActivity implements MyViewPager.OnViewPagerTouchListener, ViewPager.OnPageChangeListener,View.OnClickListener{
 
     private static final String TAG = "MainActivity";
@@ -57,6 +63,7 @@ public class MainActivity extends AppCompatActivity implements MyViewPager.OnVie
     private DrawerLayout mDrawerLayout;
     private boolean mIsTouch = false;
     private LinearLayout mPointContainer;
+    private CacheUtil mCache;
     private String mdate = "";
     private String imageUrl = "";
     private String imageUrl1 = "";
@@ -90,117 +97,198 @@ public class MainActivity extends AppCompatActivity implements MyViewPager.OnVie
         mTvArticleTitle = findViewById(R.id.main_title);
         mTvArticleForward = findViewById(R.id.main_forward);
         mIvArticle = findViewById(R.id.main_iv_article);
+        initView();
         init();
         initPicture();
         initPics();
-        initView();
+
         initArticle();
     }
 
     private void initPics() {
-        HttpUtil.sendHttpRequest(ApiUtil.MAIN_PICTURE_URL_PRE + mdate
-                + ApiUtil.MAIN_PICTURE_URL_SUF, new HttpCallbackListener() {
+        new Thread(new Runnable() {
             @Override
-            public void onFinish(final String data) {
-                try{
-                    JSONArray jsonArray = new JSONArray(data);
-                    JSONObject jsonObject = jsonArray.getJSONObject(0);
-                    imageUrl = jsonObject.getString("hp_img_url");
-                    JSONObject jsonObject1 = jsonArray.getJSONObject(1);
-                    imageUrl1 = jsonObject1.getString("hp_img_url");
-                    JSONObject jsonObject2 = jsonArray.getJSONObject(2);
-                    imageUrl2 = jsonObject2.getString("hp_img_url");
-                } catch(Exception e){
-                    e.printStackTrace();
+            public void run() {
+                if(mCache.getAsJSONArray(ApiUtil.MAIN_PICTURE_URL_PRE + mdate + ApiUtil.MAIN_PICTURE_URL_SUF) == null) {
+                    HttpUtil.sendHttpRequest(ApiUtil.MAIN_PICTURE_URL_PRE + mdate
+                            + ApiUtil.MAIN_PICTURE_URL_SUF, new HttpCallbackListener() {
+                        @Override
+                        public void onFinish(final String data) {
+                            try {
+                                JSONArray jsonArray = new JSONArray(data);
+                                mCache.put(ApiUtil.MAIN_PICTURE_URL_PRE + mdate + ApiUtil.MAIN_PICTURE_URL_SUF,jsonArray,CacheUtil.TIME_DAY);
+                                JSONObject jsonObject = jsonArray.getJSONObject(0);
+                                imageUrl = jsonObject.getString("hp_img_url");
+                                JSONObject jsonObject1 = jsonArray.getJSONObject(1);
+                                imageUrl1 = jsonObject1.getString("hp_img_url");
+                                JSONObject jsonObject2 = jsonArray.getJSONObject(2);
+                                imageUrl2 = jsonObject2.getString("hp_img_url");
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                            Message message = new Message();
+                            message.what = UPDATE_TEXT;
+                            mHandler.sendMessage(message);
+                        }
+
+                        @Override
+                        public void onError(Exception e) {
+                            Message message = new Message();
+                            message.what = TOAST;
+                            mHandler.sendMessage(message);
+                        }
+                    });
+                }else{
+                    try {
+                        JSONArray jsonArray = mCache.getAsJSONArray(ApiUtil.MAIN_PICTURE_URL_PRE + mdate + ApiUtil.MAIN_PICTURE_URL_SUF);
+                        mCache.put(ApiUtil.MAIN_PICTURE_URL_PRE + mdate + ApiUtil.MAIN_PICTURE_URL_SUF,jsonArray,CacheUtil.TIME_DAY);
+                        JSONObject jsonObject = jsonArray.getJSONObject(0);
+                        imageUrl = jsonObject.getString("hp_img_url");
+                        JSONObject jsonObject1 = jsonArray.getJSONObject(1);
+                        imageUrl1 = jsonObject1.getString("hp_img_url");
+                        JSONObject jsonObject2 = jsonArray.getJSONObject(2);
+                        imageUrl2 = jsonObject2.getString("hp_img_url");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    Message message = new Message();
+                    message.what = UPDATE_TEXT;
+                    mHandler.sendMessage(message);
                 }
-                Message message = new Message();
-                message.what = UPDATE_TEXT;
-                mHandler.sendMessage(message);
             }
-            @Override
-            public void onError(Exception e) {
-                Message message = new Message();
-                message.what = TOAST;
-                mHandler.sendMessage(message);
-            }
-        });
+        }).start();
         sPics.add(new com.wushiqian.bean.Picture("https://ss3.bdstatic.com/70cFv8Sh_Q1YnxGkpoWK1HF6hhy/it/u=4265651613,3028249006&fm=27&gp=0.jpg"));
     }
 
     private void initArticle() {
-        HttpUtil.sendHttpRequest(ApiUtil.MAIN_ARTICLE_URL_PRE + mdate
-                + ApiUtil.MAIN_ARTICLE_URL_SUF, new HttpCallbackListener() {
+        new Thread(new Runnable() {
             @Override
-            public void onFinish(final String response) {
-                try{
-                    JSONArray jsonArr = new JSONArray(response);
-                    JSONObject jsonObj = jsonArr.getJSONObject(0);
-                    articleTitle = jsonObj.getString("hp_title");
-//                    articleUrl = jsonObj.getString("hp_img_url");
-                    articleForward = jsonObj.getString("guide_word");
-                    String jo = jsonObj.getString("author");
-                    JSONArray jArray = new JSONArray(jo);
-                    JSONObject jObject = jArray.getJSONObject(0);
-                    articleAuthor = jObject.getString("user_name");
-                } catch(Exception e){
-                    e.printStackTrace();
-                }
-                Message message = new Message();
-                message.what = ARTICLE;
-                mHandler.sendMessage(message);
-            }
-            @Override
-            public void onError(Exception e) {
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Message message = new Message();
-                        message.what = TOAST;
-                        mHandler.sendMessage(message);
+            public void run() {
+                if(mCache.getAsJSONArray(ApiUtil.MAIN_ARTICLE_URL_PRE + mdate
+                        + ApiUtil.MAIN_ARTICLE_URL_SUF) == null) {
+                    HttpUtil.sendHttpRequest(ApiUtil.MAIN_ARTICLE_URL_PRE + mdate
+                            + ApiUtil.MAIN_ARTICLE_URL_SUF, new HttpCallbackListener() {
+                        @Override
+                        public void onFinish(final String response) {
+                            try {
+                                JSONArray jsonArray = new JSONArray(response);
+                                mCache.put(ApiUtil.MAIN_ARTICLE_URL_PRE + mdate
+                                        + ApiUtil.MAIN_ARTICLE_URL_SUF,jsonArray,CacheUtil.TIME_DAY);
+                                JSONObject jsonObj = jsonArray.getJSONObject(0);
+                                articleTitle = jsonObj.getString("hp_title");
+                                articleForward = jsonObj.getString("guide_word");
+                                String jo = jsonObj.getString("author");
+                                JSONArray jArray = new JSONArray(jo);
+                                JSONObject jObject = jArray.getJSONObject(0);
+                                articleAuthor = jObject.getString("user_name");
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                            Message message = new Message();
+                            message.what = ARTICLE;
+                            mHandler.sendMessage(message);
+                        }
+
+                        @Override
+                        public void onError(Exception e) {
+                            new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Message message = new Message();
+                                    message.what = TOAST;
+                                    mHandler.sendMessage(message);
+                                }
+                            }).start();
+                        }
+                    });
+                }else{
+                    try {
+                        JSONArray jsonArray = mCache.getAsJSONArray(ApiUtil.MAIN_ARTICLE_URL_PRE + mdate
+                                + ApiUtil.MAIN_ARTICLE_URL_SUF);
+                        mCache.put(ApiUtil.MAIN_ARTICLE_URL_PRE + mdate
+                                + ApiUtil.MAIN_ARTICLE_URL_SUF,jsonArray,CacheUtil.TIME_DAY);
+                        JSONObject jsonObj = jsonArray.getJSONObject(0);
+                        articleTitle = jsonObj.getString("hp_title");
+                        articleForward = jsonObj.getString("guide_word");
+                        String jo = jsonObj.getString("author");
+                        JSONArray jArray = new JSONArray(jo);
+                        JSONObject jObject = jArray.getJSONObject(0);
+                        articleAuthor = jObject.getString("user_name");
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-                }).start();
+                    Message message = new Message();
+                    message.what = ARTICLE;
+                    mHandler.sendMessage(message);
+                }
             }
-        });
+        }).start();
     }
 
     private void initPicture() {
-        HttpUtil.sendHttpRequest(ApiUtil.MAIN_PICTURE_URL_PRE + mdate
-                + ApiUtil.MAIN_PICTURE_URL_SUF, new HttpCallbackListener() {
+        new Thread(new Runnable() {
             @Override
-            public void onFinish(final String data) {
-                try{
-                    JSONArray jsonArray = new JSONArray(data);
-                    JSONObject jsonObject = jsonArray.getJSONObject(0);
-                    String author = jsonObject.getString("hp_author");
-                    imageUrl = jsonObject.getString("hp_img_url");
-                    String imageAuthor = jsonObject.getString("image_authors");
-                    message = "" + author + "|" + imageAuthor;
-                    content = jsonObject.getString("hp_content");
-                    text = jsonObject.getString("text_authors");
-                } catch(Exception e){
-                    e.printStackTrace();
-                }
-                Message message = new Message();
-                message.what = DATA;
-                mHandler.sendMessage(message);
-            }
-            @Override
-            public void onError(Exception e) {
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Message message = new Message();
-                        message.what = TOAST;
-                        mHandler.sendMessage(message);
+            public void run() {
+                if(mCache.getAsJSONArray(ApiUtil.MAIN_PICTURE_URL_PRE + mdate
+                        + ApiUtil.MAIN_PICTURE_URL_SUF) == null ) {
+                    HttpUtil.sendHttpRequest(ApiUtil.MAIN_PICTURE_URL_PRE + mdate
+                            + ApiUtil.MAIN_PICTURE_URL_SUF, new HttpCallbackListener() {
+                        @Override
+                        public void onFinish(final String data) {
+                            try {
+                                JSONArray jsonArray = new JSONArray(data);
+                                mCache.put(ApiUtil.MAIN_PICTURE_URL_PRE + mdate
+                                        + ApiUtil.MAIN_PICTURE_URL_SUF,jsonArray,CacheUtil.TIME_DAY);
+                                JSONObject jsonObject = jsonArray.getJSONObject(0);
+                                String author = jsonObject.getString("hp_author");
+                                imageUrl = jsonObject.getString("hp_img_url");
+                                String imageAuthor = jsonObject.getString("image_authors");
+                                message = "" + author + "|" + imageAuthor;
+                                content = jsonObject.getString("hp_content");
+                                text = jsonObject.getString("text_authors");
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                            Message message = new Message();
+                            message.what = DATA;
+                            mHandler.sendMessage(message);
+                        }
+
+                        @Override
+                        public void onError(Exception e) {
+                            Message message = new Message();
+                            message.what = TOAST;
+                            mHandler.sendMessage(message);
+                        }
+                    });
+                }else{
+                    try {
+                        JSONArray jsonArray = mCache.getAsJSONArray(ApiUtil.MAIN_PICTURE_URL_PRE + mdate
+                                + ApiUtil.MAIN_PICTURE_URL_SUF);
+                        mCache.put(ApiUtil.MAIN_PICTURE_URL_PRE + mdate
+                                + ApiUtil.MAIN_PICTURE_URL_SUF,jsonArray,CacheUtil.TIME_DAY);
+                        JSONObject jsonObject = jsonArray.getJSONObject(0);
+                        String author = jsonObject.getString("hp_author");
+                        imageUrl = jsonObject.getString("hp_img_url");
+                        String imageAuthor = jsonObject.getString("image_authors");
+                        message = "" + author + "|" + imageAuthor;
+                        content = jsonObject.getString("hp_content");
+                        text = jsonObject.getString("text_authors");
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-                }).start();
+                    Message message = new Message();
+                    message.what = DATA;
+                    mHandler.sendMessage(message);
+                }
             }
-        });
+        }).start();
     }
 
     private void init() {
 //        dbHelper = new MyDatabaseHelper(this,"One.db",null,2);//数据库管理
 //        mDBManager = new DBManager();
+        mCache = CacheUtil.get(this);
         mtoolbar =  findViewById(R.id.toolBar);//toolbar
         setSupportActionBar(mtoolbar);
         mDrawerLayout = findViewById(R.id.drawer_layout);//滑动菜单
@@ -353,6 +441,11 @@ public class MainActivity extends AppCompatActivity implements MyViewPager.OnVie
         //根据图片的个数,去添加点的个数
         insertPoint();
         mLoopPager.setCurrentItem(mPagerAdapter.getDataRealSize() * 100, true);
+        if(Build.VERSION.SDK_INT >= 21){
+            View decorView = getWindow().getDecorView();
+            decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+            getWindow().setStatusBarColor(Color.TRANSPARENT);
+        }
     }
 
     private void insertPoint() {

@@ -17,70 +17,150 @@ import com.wushiqian.adapter.PictureAdapter;
 import com.wushiqian.bean.Picture;
 import com.wushiqian.ui.LoadMoreListView;
 import com.wushiqian.util.ApiUtil;
+import com.wushiqian.util.CacheUtil;
 import com.wushiqian.util.HttpCallbackListener;
 import com.wushiqian.util.HttpUtil;
 import com.wushiqian.util.LogUtil;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Vector;
 
+/**
+*图片列表
+* @author wushiqian
+* created at 2018/5/25 20:06
+*/
 public class PictureActivity extends AppCompatActivity {
 
     private final String TAG = "PictureActivity";
     private LoadMoreListView mlistView ;
     private Toolbar mtoolbar;
-    private PictureAdapter adapter;
-    private List<Picture> mPictureList = new Vector<>();
+    private PictureAdapter adapter ;
+    private List<Picture> mPictureList = new LinkedList<>();
     private List<Integer> mitemIdList = new ArrayList<>();
     private SwipeRefreshLayout swipeRefresh;
     private  static final int TOAST = 1;
     private  static final int UPDATE = 2;
+    private static final int PIC = 3;
     private int nextList = 0;
-    private String imageUrl = "";
-    private int itemId = 0;
-    private String message = "";
-    private Picture picture = null;
-    private JSONArray jsonArray;
+    private int itemId ;
+    private CacheUtil mCacheUtil;
 
 
     private Handler handler = new Handler() {
         @Override
         public void handleMessage(@NonNull Message msg) {
             switch (msg.what) {
+                case  PIC:
+                    if(mPictureList.size() == 10 ) {
+                        mlistView.setAdapter(adapter);
+                    }
+                    break;
                 case  TOAST:
                     Toast.makeText(PictureActivity.this,"error",Toast.LENGTH_SHORT).show();
                     break;
                 case  UPDATE:
-                    adapter = new PictureAdapter(mPictureList);
-                    mlistView.setAdapter(adapter);
-                    adapter.notifyDataSetChanged();
+                    for (int i = 0; i < mitemIdList.size(); i++) {
+                        int itemId = mitemIdList.get(i);
+                        initPic(ApiUtil.PICTURE_DETAIL_URL_PRE + itemId
+                                + ApiUtil.PICTURE_DETAIL_URL_SUF);
+                        }
                     break;
                 default: break;
             }
         }
+
     };
+
+    private void initPic(final String address) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if(mCacheUtil.getAsJSONObject(address) == null){
+                    HttpUtil.sendHttpRequest(address, new HttpCallbackListener() {
+                        @Override
+                        public void onFinish(final String data) {
+                            try {
+                                JSONObject jsonObject = new JSONObject(data);
+                                mCacheUtil.put(address,jsonObject,CacheUtil.TIME_DAY);
+                                String imageUrl = jsonObject.getString("hp_img_url");
+                                String message = jsonObject.getString("hp_author");
+                                LogUtil.d(TAG, message);
+                                int itemId = jsonObject.getInt("hpcontent_id");
+                                Picture picture = new Picture(imageUrl, itemId, message);
+                                mPictureList.add(picture);
+                                adapter.notifyDataSetChanged();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                            Message message = new Message();
+                            message.what = PIC;
+                            handler.sendMessage(message);
+                        }
+
+                        @Override
+                        public void onError(Exception e) {
+                            LogUtil.d(TAG,"这里出错了");
+                            Message message = new Message();
+                            message.what = TOAST;
+                            handler.sendMessage(message);
+                        }
+                    });
+                } else{
+                    try {
+                        JSONObject jsonObject = mCacheUtil.getAsJSONObject(address);
+                        mCacheUtil.put(address,jsonObject,CacheUtil.TIME_DAY);
+                        String imageUrl = jsonObject.getString("hp_img_url");
+                        String message = jsonObject.getString("hp_author");
+                        LogUtil.d(TAG, message);
+                        int itemId = jsonObject.getInt("hpcontent_id");
+                        Picture picture = new Picture(imageUrl, itemId, message);
+                        mPictureList.add(picture);
+                        adapter.notifyDataSetChanged();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    Message message = new Message();
+                    message.what = PIC;
+                    handler.sendMessage(message);
+                }
+            }
+        }).start();
+
+    }
+
         @Override
          protected void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             setContentView(R.layout.picture_list);
             mlistView = findViewById(R.id.picture_lv);
-            initView();
+            adapter = new PictureAdapter(mPictureList);
+            mPictureList.clear();
+            mCacheUtil = CacheUtil.get(this);
             initPicture();
+            initView();
         }
 
+    /**
+    * 加载view
+    * @author wushiqian
+    * @pram  void
+    * @return void
+    */
     private void initView() {
         mlistView.setOnItemClickListener(new AdapterView.OnItemClickListener(){
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Picture picture = mPictureList.get(position);
-//                Toast.makeText(PictureActivity.this,"test",Toast.LENGTH_SHORT).show();
                 int itemId = picture.getItemId();
                 Intent intent = new Intent(PictureActivity.this,PictureDetailActivity.class);
-                intent.putExtra("url",ApiUtil.ARTICLE_DETAIL_URL_PRE + itemId + ApiUtil.ARTICLE_DETAIL_URL_SUF );
+                intent.putExtra("url",ApiUtil.PICTURE_DETAIL_URL_PRE + itemId + ApiUtil.PICTURE_DETAIL_URL_SUF );
                 startActivity(intent);
             }
         });
@@ -102,6 +182,7 @@ public class PictureActivity extends AppCompatActivity {
         swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
+                mPictureList.clear();
                 refreshPicture();
             }
         });
@@ -114,81 +195,76 @@ public class PictureActivity extends AppCompatActivity {
     }
 
     private void loadMore() {
+            mitemIdList.clear();
             initPicture();
-            adapter.notifyDataSetChanged();
             mlistView.setLoadCompleted();
         }
 
     private void refreshPicture() {
-            nextList = 0;
-            mPictureList.clear();
-            initPicture();
-            adapter.notifyDataSetChanged();
-            swipeRefresh.setRefreshing(false);
+
+        nextList = 0;
+        mitemIdList.clear();
+        initPicture();
+        adapter.notifyDataSetChanged();
+        swipeRefresh.setRefreshing(false);
         }
 
     private void initPicture() {
-            HttpUtil.sendHttpRequest(ApiUtil.PICTURE_LIST_URL_PRE + nextList
-                    + ApiUtil.PICTURE_LIST_URL_SUF, new HttpCallbackListener() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if(mCacheUtil.getAsJSONArray(ApiUtil.PICTURE_LIST_URL_PRE + nextList
+                        + ApiUtil.PICTURE_LIST_URL_SUF ) == null) {
+                    HttpUtil.sendHttpRequest(ApiUtil.PICTURE_LIST_URL_PRE + nextList
+                            + ApiUtil.PICTURE_LIST_URL_SUF, new HttpCallbackListener() {
                         @Override
                         public void onFinish(final String response) {
                             try {
-                                jsonArray = new JSONArray(response);
+                                JSONArray jsonArray = new JSONArray(response);
+                                mCacheUtil.put(ApiUtil.PICTURE_LIST_URL_PRE + nextList
+                                        + ApiUtil.PICTURE_LIST_URL_SUF,jsonArray,CacheUtil.TIME_DAY);
                                 for (int i = 0; i < jsonArray.length(); i++) {
                                     itemId = jsonArray.getInt(i);
                                     mitemIdList.add(itemId);
                                 }
+                                Message message = new Message();
+                                message.what = UPDATE;
+                                handler.sendMessage(message);
                                 nextList = itemId;
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
-                            for (int i = 0; i < mitemIdList.size(); i++) {
-                                itemId = mitemIdList.get(i);
-                                HttpUtil.sendHttpRequest(ApiUtil.PICTURE_DETAIL_URL_PRE + itemId
-                                        + ApiUtil.PICTURE_DETAIL_URL_SUF, new HttpCallbackListener() {
-                                    @Override
-                                    public void onFinish(final String data) {
-                                        try {
-                                            JSONObject jsonObject = new JSONObject(data);
-                                            imageUrl = jsonObject.getString("hp_img_url");
-                                            message = jsonObject.getString("hp_author");
-                                            LogUtil.d(TAG, message);
-                                            itemId = jsonObject.getInt("hpcontent_id");
-                                            picture = new Picture(imageUrl, itemId, message);
-                                            mPictureList.add(picture);
-                                        } catch (Exception e) {
-                                            e.printStackTrace();
-                                        }
-                                        Message message = new Message();
-                                        message.what = UPDATE;
-                                        handler.sendMessage(message);
-                                    }
-
-                                    @Override
-                                    public void onError(Exception e) {
-                                        Message message = new Message();
-                                        message.what = TOAST;
-                                        handler.sendMessage(message);
-                                    }
-                                });
-                            }
-                            mitemIdList.clear();
                         }
 
                         @Override
                         public void onError(Exception e) {
-                            new Thread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Message message = new Message();
-                                    message.what = TOAST;
-                                    handler.sendMessage(message);
-                                }
-                            }).start();
+                            LogUtil.d(TAG, "这里出错了");
+                            Message message = new Message();
+                            message.what = TOAST;
+                            handler.sendMessage(message);
                         }
                     });
+                }else{
+                    try {
+                        JSONArray jsonArray = mCacheUtil.getAsJSONArray(ApiUtil.PICTURE_LIST_URL_PRE + nextList
+                                + ApiUtil.PICTURE_LIST_URL_SUF);
+                        mCacheUtil.put(ApiUtil.PICTURE_LIST_URL_PRE + nextList
+                                + ApiUtil.PICTURE_LIST_URL_SUF, jsonArray, CacheUtil.TIME_DAY);
+                        for (int i = 0; i < jsonArray.length(); i++) {
+                            itemId = jsonArray.getInt(i);
+                            mitemIdList.add(itemId);
+                        }
+                    }catch (JSONException e){
+                        e.printStackTrace();
+                    }
+                    nextList = itemId;
+                    Message message = new Message();
+                    message.what = UPDATE;
+                    handler.sendMessage(message);
+                }
+            }
+        }).start();
 
-
-    }
+        }
 
     }

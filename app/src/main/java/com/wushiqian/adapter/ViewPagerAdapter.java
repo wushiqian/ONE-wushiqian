@@ -16,6 +16,11 @@ import com.wushiqian.util.MyApplication;
 import java.io.InputStream;
 import java.util.List;
 
+/**
+* 轮播图的适配器
+* @author wushiqian
+* created at 2018/5/25 20:18
+*/
 public class ViewPagerAdapter extends PagerAdapter {
 
     private static final String TAG = "PagerAdapter";

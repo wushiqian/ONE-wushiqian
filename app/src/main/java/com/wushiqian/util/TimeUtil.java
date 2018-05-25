@@ -2,6 +2,11 @@ package com.wushiqian.util;
 
 import java.util.Calendar;
 
+/**
+* 时间工具类
+* @author wushiqian
+* created at 2018/5/25 20:23
+*/
 public class TimeUtil {
 
     public static String getTimeByCalendar(){

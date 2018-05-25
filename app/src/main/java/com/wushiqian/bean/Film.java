@@ -1,5 +1,10 @@
 package com.wushiqian.bean;
 
+/**
+* 电影bean
+* @author wushiqian
+* created at 2018/5/25 20:19
+*/
 public class Film {
 
     private String title;

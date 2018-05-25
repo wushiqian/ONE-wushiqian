@@ -2,6 +2,11 @@ package com.wushiqian.util;
 
 import android.util.Log;
 
+/**
+* 日志工具类
+* @author wushiqian
+* created at 2018/5/25 20:23
+*/
 public class LogUtil {
 
     public static final int VERBOSE = 1;

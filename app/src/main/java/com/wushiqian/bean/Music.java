@@ -1,5 +1,10 @@
 package com.wushiqian.bean;
 
+/**
+* 音乐bean
+* @author wushiqian
+* created at 2018/5/25 20:19
+*/
 public class Music {
 
     private String title;

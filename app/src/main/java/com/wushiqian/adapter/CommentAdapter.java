@@ -23,6 +23,11 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
 
+/**
+* 评论列表的适配器
+* @author wushiqian
+* created at 2018/5/25 20:17
+*/
 public class CommentAdapter extends BaseAdapter {
 
     private List<Comment> list;
