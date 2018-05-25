@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Html;
 import android.text.Spanned;
@@ -20,12 +21,17 @@ import android.widget.Toast;
 
 import com.example.wushiqian.one_wushiqian.R;
 import com.wushiqian.adapter.CommentAdapter;
+import com.wushiqian.bean.ArticleListItem;
+import com.wushiqian.bean.Author;
 import com.wushiqian.bean.Comment;
+import com.wushiqian.bean.Film;
+import com.wushiqian.bean.Music;
 import com.wushiqian.ui.LoadMoreListView;
 import com.wushiqian.util.ApiUtil;
 import com.wushiqian.util.CacheUtil;
 import com.wushiqian.util.HttpCallbackListener;
 import com.wushiqian.util.HttpUtil;
+import com.wushiqian.util.JSONUtil;
 import com.wushiqian.util.LogUtil;
 
 import org.json.JSONArray;
@@ -42,17 +48,18 @@ import java.util.List;
 * @author wushiqian
 * created at 2018/5/25 20:15
 */
-public class ContentActivity extends AppCompatActivity {
+public class ContentActivity extends BaseActivity {
 
     private static final String TAG = "ContentActivity";
+    private static final int MUSIC_CONTENT = 5;
+    private static final int MOVIE_CONTENT = 6;
     private android.support.v7.widget.Toolbar mToolbar;
-    private static final int UPDATE_TEXT = 1;
+    private static final int ARTICLE_TEXT = 1;
     private static final int TOAST = 2;
     private static final int UPDATE_COMMENT = 3;
     private static final int UPDATE_AUTHOR = 4;
     private List<Comment> mCommentList = new ArrayList<>();
     private CommentAdapter adapter;
-    private String result = "";
     private TextView mTextView;
     private TextView mTvTitle;
     private TextView mTvAuthor;
@@ -63,36 +70,35 @@ public class ContentActivity extends AppCompatActivity {
     private TextView mTvright;
     private TextView mTvAuthorName;
     private TextView mTvDesc;
-    private String author = "";
     private int itemId;
-    private String title = "";
-    private String introauthor = "";
     private String address = "";
     private String type = "";
-    private String copyright = "";
-    private String authorImaUrl = "";
-    private String authorDesc = "";
-    private String coverUrl = "";
-    private String titleInfo = "";
     private CacheUtil mCache;
+    private Music music;
+    private Film film;
+    private ArticleListItem article;
+    private Author mAuthor;
 
     private Handler handler = new Handler() {
         public void handleMessage(@NonNull Message msg) {
             switch (msg.what) {
-                case UPDATE_TEXT:
-//                    final Spanned text = Html.fromHtml(result,imageGetter,null);
-//                    mTextView.setText(text);
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                        mTextView.setText(Html.fromHtml(result, Html.FROM_HTML_MODE_LEGACY, imageGetter, null));
-                    } else {
-                        mTextView.setText(Html.fromHtml(result, imageGetter, null));
-                    }
-                    mTvright.setText(copyright);
-                    mTvIntroduce.setText(introauthor);
-                    mTvTitle.setText(title);
-                    mTvAuthor.setText(titleInfo);
-                    new DownloadImageTask(mIvCover)
-                            .execute(coverUrl);
+                case ARTICLE_TEXT:
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            final Spanned text = Html.fromHtml(article.getContent(),imageGetter,null);
+                            handler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mTextView.setText(text);
+                                }
+                            });
+                        }
+                    }).start();
+                    mTvright.setText(article.getCopyright());
+                    mTvIntroduce.setText(article.getIntroauthor());
+                    mTvTitle.setText(article.getTitle());
+                    mTvAuthor.setText(article.getTitleInfo());
                     break;
                 case  TOAST:
                     Toast.makeText(ContentActivity.this,"error",Toast.LENGTH_SHORT).show();
@@ -100,11 +106,51 @@ public class ContentActivity extends AppCompatActivity {
                 case UPDATE_COMMENT:
                     adapter = new CommentAdapter(mCommentList);
                     mTvComment.setAdapter(adapter);
+                    break;
                 case UPDATE_AUTHOR:
-                    mTvDesc.setText(authorDesc);
-                    mTvAuthorName.setText(author);
+                    mTvDesc.setText(mAuthor.getAuthorDesc());
+                    mTvAuthorName.setText(mAuthor.getAuthor());
                     new DownloadImageTask(mIvauthor)
-                        .execute("" + authorImaUrl);
+                        .execute(mAuthor.getAuthorImaUrl());
+                    break;
+                case MUSIC_CONTENT:
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            final Spanned text = Html.fromHtml(music.getContent(),imageGetter,null);
+                            handler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mTextView.setText(text);
+                                }
+                            });
+                        }
+                    }).start();
+                    mTvright.setText(music.getCopyright());
+                    mTvIntroduce.setText(music.getIntroauthor());
+                    mTvTitle.setText(music.getTitle());
+                    mTvAuthor.setText(music.getTitleInfo());
+                    new DownloadImageTask(mIvCover)
+                            .execute(music.getCoverUrl());
+                    break;
+                case MOVIE_CONTENT:
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            final Spanned text = Html.fromHtml(film.getContent(),imageGetter,null);
+                            handler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mTextView.setText(text);
+                                }
+                            });
+                        }
+                    }).start();
+                    mTvright.setText(film.getCopyright());
+                    mTvIntroduce.setText(film.getIntroauthor());
+                    mTvTitle.setText(film.getTitle());
+                    mTvAuthor.setText(film.getTitleInfo());
+                    break;
                 default: break;
             }
         }
@@ -145,63 +191,32 @@ public class ContentActivity extends AppCompatActivity {
                             try {
                                 JSONObject jsonObjectMovie = new JSONObject(response);
                                 mCache.put(address,jsonObjectMovie,CacheUtil.TIME_HOUR);
-                                String data = jsonObjectMovie.getString("data");
-                                JSONArray jsonArray = new JSONArray(data);
-                                JSONObject jsonObject = jsonArray.getJSONObject(0);
-                                String user = jsonObject.getString("user");
-                                JSONObject jsonObject1 = new JSONObject(user);
-                                title = jsonObject.getString("title");
-                                result = jsonObject.getString("content");
-                                String userName = jsonObject1.getString("user_name");
-                                titleInfo = "文/" + userName;
-                                introauthor = jsonObject.getString("charge_edt");
-                                copyright = jsonObject.getString("copyright");
+                                film = JSONUtil.parseJSONMovieDetail(jsonObjectMovie);
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
-
-                            new Thread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Message message = new Message();
-                                    message.what = UPDATE_TEXT;
-                                    handler.sendMessage(message);
-                                }
-                            }).start();
+                            Message message = new Message();
+                            message.what = MOVIE_CONTENT;
+                            handler.sendMessage(message);
                         }
 
                         @Override
                         public void onError(Exception e) {
-                            new Thread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Message message = new Message();
-                                    message.what = TOAST;
-                                    handler.sendMessage(message);
-                                }
-                            }).start();
+                            Message message = new Message();
+                            message.what = TOAST;
+                            handler.sendMessage(message);
                         }
                     });
                 }else{
                     JSONObject jsonObjectMovie = mCache.getAsJSONObject(address);
                     mCache.put(address,jsonObjectMovie,CacheUtil.TIME_HOUR);
                     try{
-                        String data = jsonObjectMovie.getString("data");
-                        JSONArray jsonArray = new JSONArray(data);
-                        JSONObject jsonObject = jsonArray.getJSONObject(0);
-                        String user = jsonObject.getString("user");
-                        JSONObject jsonObject1 = new JSONObject(user);
-                        title = jsonObject.getString("title");
-                        result = jsonObject.getString("content");
-                        String userName = jsonObject1.getString("user_name");
-                        titleInfo = "文/" + userName;
-                        introauthor = jsonObject.getString("charge_edt");
-                        copyright = jsonObject.getString("copyright");
+                        film = JSONUtil.parseJSONMovieDetail(jsonObjectMovie);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                     Message message = new Message();
-                    message.what = UPDATE_TEXT;
+                    message.what = MOVIE_CONTENT;
                     handler.sendMessage(message);
                 }
             }
@@ -217,20 +232,13 @@ public class ContentActivity extends AppCompatActivity {
                     LogUtil.d("ContentActivity", "缓存加载");
                     try {
                         JSONObject jsonObject = mCache.getAsJSONObject(address);
-                        mCache.put(address, jsonObject, CacheUtil.TIME_HOUR);
-                        title = jsonObject.getString("story_title");
-                        result = jsonObject.getString("story");
-                        coverUrl = jsonObject.getString("cover");
-                        String info = jsonObject.getString("info");
-                        String title = jsonObject.getString("title");
-                        titleInfo = title + "\n" + info;
-                        introauthor = jsonObject.getString("charge_edt");
-                        copyright = jsonObject.getString("copyright");
+                        mCache.put(address, jsonObject, 12 * CacheUtil.TIME_HOUR);
+                        music = JSONUtil.parseJSONMusicDetail(jsonObject);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                     Message message = new Message();
-                    message.what = UPDATE_TEXT;
+                    message.what = MUSIC_CONTENT;
                     handler.sendMessage(message);
                 } else {
                     LogUtil.d("ContentActivity", "网络加载");
@@ -240,19 +248,12 @@ public class ContentActivity extends AppCompatActivity {
                             try {
                                 JSONObject jsonObject = new JSONObject(response);
                                 mCache.put(address, jsonObject, CacheUtil.TIME_HOUR);
-                                title = jsonObject.getString("story_title");
-                                result = jsonObject.getString("story");
-                                coverUrl = jsonObject.getString("cover");
-                                String info = jsonObject.getString("info");
-                                String title = jsonObject.getString("title");
-                                titleInfo = title + "\n" + info;
-                                introauthor = jsonObject.getString("charge_edt");
-                                copyright = jsonObject.getString("copyright");
+                                music = JSONUtil.parseJSONMusicDetail(jsonObject);
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
                             Message message = new Message();
-                            message.what = UPDATE_TEXT;
+                            message.what = MUSIC_CONTENT;
                             handler.sendMessage(message);
                         }
 
@@ -306,49 +307,15 @@ public class ContentActivity extends AppCompatActivity {
                         @Override
                         public void onFinish(final String response) {
                             try {
-                                if(type.equals("music")){
-                                    JSONObject jsonAuthor = new JSONObject(response);
-                                    mCache.put(address + type,jsonAuthor, CacheUtil.TIME_HOUR);
-                                    String data = jsonAuthor.getString("story_author");
-                                    JSONObject jsonObject = new JSONObject(data);
-                                    author = jsonObject.getString("user_name");
-                                    authorImaUrl = jsonObject.getString("web_url");
-                                    authorDesc = jsonObject.getString("desc");
-                                }else if(type.equals("movie")) {
-                                    JSONObject jsonAuthor = new JSONObject(response);
-                                    mCache.put(address + type,jsonAuthor,CacheUtil.TIME_HOUR);
-                                    String data = jsonAuthor.getString("data");
-                                    JSONArray jsonArray = new JSONArray(data);
-                                    JSONObject jsonObject = jsonArray.getJSONObject(0);
-                                    String authorData = jsonObject.getString("user");
-                                    JSONObject jsonObject1 = new JSONObject(authorData);
-                                    author = jsonObject1.getString("user_name");
-                                    authorImaUrl = jsonObject1.getString("web_url");
-                                    authorDesc = jsonObject1.getString("desc");
-                                }else {
-                                    JSONObject jsonAuthor = new JSONObject(response);
-                                    mCache.put(address + type,jsonAuthor,CacheUtil.TIME_HOUR);
-                                    String data = jsonAuthor.getString("author");
-                                    JSONArray jsonArray = new JSONArray(data);
-                                    for (int i = 0; i < jsonArray.length(); i++) {
-                                        JSONObject jsonObject = jsonArray.getJSONObject(i);
-                                        author = jsonObject.getString("user_name");
-                                        authorImaUrl = jsonObject.getString("web_url");
-                                        authorDesc = jsonObject.getString("desc");
-                                    }
-                                }
+                                JSONObject jsonAuthor = new JSONObject(response);
+                                mCache.put(address + type,jsonAuthor,CacheUtil.TIME_HOUR);
+                                mAuthor = JSONUtil.parseJSONAuthor(jsonAuthor,type);
                             }catch (JSONException e){
                                 e.printStackTrace();
                             }
-
-                            new Thread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Message message = new Message();
-                                    message.what = UPDATE_AUTHOR;
-                                    handler.sendMessage(message);
-                                }
-                            }).start();
+                            Message message = new Message();
+                            message.what = UPDATE_AUTHOR;
+                            handler.sendMessage(message);
                         }
                         @Override
                         public void onError(Exception e) {
@@ -359,38 +326,8 @@ public class ContentActivity extends AppCompatActivity {
                     });
                 }else {
                     JSONObject jsonAuthor = mCache.getAsJSONObject(address + type);
-                    try {
-                        if(type.equals("music")){
-                            mCache.put(address + type,jsonAuthor,CacheUtil.TIME_HOUR);
-                            String data = jsonAuthor.getString("story_author");
-                            JSONObject jsonObject = new JSONObject(data);
-                            author = jsonObject.getString("user_name");
-                            authorImaUrl = jsonObject.getString("web_url");
-                            authorDesc = jsonObject.getString("desc");
-                        }else if(type.equals("movie")) {
-                            mCache.put(address + type,jsonAuthor,CacheUtil.TIME_HOUR);
-                            String data = jsonAuthor.getString("data");
-                            JSONArray jsonArray = new JSONArray(data);
-                            JSONObject jsonObject = jsonArray.getJSONObject(0);
-                            String authorData = jsonObject.getString("user");
-                            JSONObject jsonObject1 = new JSONObject(authorData);
-                            author = jsonObject1.getString("user_name");
-                            authorImaUrl = jsonObject1.getString("web_url");
-                            authorDesc = jsonObject1.getString("desc");
-                        }else {
-                            mCache.put(address + type,jsonAuthor,CacheUtil.TIME_HOUR);
-                            String data = jsonAuthor.getString("author");
-                            JSONArray jsonArray = new JSONArray(data);
-                            for (int i = 0; i < jsonArray.length(); i++) {
-                                JSONObject jsonObject = jsonArray.getJSONObject(i);
-                                author = jsonObject.getString("user_name");
-                                authorImaUrl = jsonObject.getString("web_url");
-                                authorDesc = jsonObject.getString("desc");
-                            }
-                        }
-                    }catch (JSONException e){
-                        e.printStackTrace();
-                    }
+                    mCache.put(address + type,jsonAuthor,CacheUtil.TIME_HOUR);
+                    mAuthor = JSONUtil.parseJSONAuthor(jsonAuthor,type);
                     Message message = new Message();
                     message.what = UPDATE_AUTHOR;
                     handler.sendMessage(message);
@@ -409,47 +346,23 @@ public class ContentActivity extends AppCompatActivity {
                             + ApiUtil.COMMENT_URL_SUF, new HttpCallbackListener() {
                         @Override
                         public void onFinish(final String response) {
-                            Comment comment = null;
                             try{
                                 JSONObject jsonComment = new JSONObject(response);
-                                mCache.put("http://v3.wufazhuce.com:8000/api/comment/praiseandtime/" + type
-                                        + "/" + itemId + "/0?&platform=android",jsonComment,CacheUtil.TIME_HOUR);
-                                String data = jsonComment.getString("data");
-                                JSONArray jsonArray = new JSONArray(data);
-                                for(int i = 0; i < jsonArray.length();i++){
-                                    JSONObject jsonObject = jsonArray.getJSONObject(i);
-                                    String user = jsonObject.getString("user");
-                                    JSONObject jo = new JSONObject(user);
-                                    String imageUrl = jo.getString("web_url");
-                                    String userName = jo.getString("user_name");
-                                    String time = jsonObject.getString("input_date");
-                                    String scomment = jsonObject.getString("content");
-                                    int praiseNum = jsonObject.getInt("praisenum");
-                                    comment = new Comment(imageUrl,userName,time,scomment,praiseNum);
-                                    mCommentList.add(comment);
-                                }
+                                mCache.put(ApiUtil.COMMENT_URL_PRE + type + "/" + itemId
+                                        + ApiUtil.COMMENT_URL_SUF,jsonComment,12 * CacheUtil.TIME_HOUR);
+                                    mCommentList.addAll(JSONUtil.parseJSONComment(jsonComment));
                             } catch(Exception e){
                                 e.printStackTrace();
                             }
-                            new Thread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Message message = new Message();
-                                    message.what = UPDATE_COMMENT;
-                                    handler.sendMessage(message);
-                                }
-                            }).start();
+                            Message message = new Message();
+                            message.what = UPDATE_COMMENT;
+                            handler.sendMessage(message);
                         }
                         @Override
                         public void onError(Exception e) {
-                            new Thread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Message message = new Message();
-                                    message.what = TOAST;
-                                    handler.sendMessage(message);
-                                }
-                            }).start();
+                            Message message = new Message();
+                            message.what = TOAST;
+                            handler.sendMessage(message);
                         }
                     });
                 }else{
@@ -458,20 +371,7 @@ public class ContentActivity extends AppCompatActivity {
                     try{
                         mCache.put(ApiUtil.COMMENT_URL_PRE + type + "/" + itemId
                                 + ApiUtil.COMMENT_URL_SUF,jsonComment,CacheUtil.TIME_HOUR);
-                        String data = jsonComment.getString("data");
-                        JSONArray jsonArray = new JSONArray(data);
-                        for(int i = 0; i < jsonArray.length();i++){
-                            JSONObject jsonObject = jsonArray.getJSONObject(i);
-                            String user = jsonObject.getString("user");
-                            JSONObject jo = new JSONObject(user);
-                            String imageUrl = jo.getString("web_url");
-                            String userName = jo.getString("user_name");
-                            String time = jsonObject.getString("input_date");
-                            String scomment = jsonObject.getString("content");
-                            int praiseNum = jsonObject.getInt("praisenum");
-                            Comment comment = new Comment(imageUrl,userName,time,scomment,praiseNum);
-                            mCommentList.add(comment);
-                        }
+                        mCommentList.addAll(JSONUtil.parseJSONComment(jsonComment));
                     } catch(Exception e){
                         e.printStackTrace();
                     }
@@ -494,52 +394,32 @@ public class ContentActivity extends AppCompatActivity {
                             try {
                                 JSONObject jsonObjectArticle = new JSONObject(response);
                                 mCache.put(address,jsonObjectArticle,CacheUtil.TIME_HOUR);
-                                title = jsonObjectArticle.optString("hp_title");
-                                result = jsonObjectArticle.optString("hp_content");
-                                String author = jsonObjectArticle.optString("hp_author");
-                                titleInfo = "文/" + author;
-                                introauthor = jsonObjectArticle.optString("hp_author_introduce");
-                                copyright = jsonObjectArticle.optString("copyright");
+                                article = JSONUtil.parseJSONArticleDetail(jsonObjectArticle);
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
-                            new Thread(new Runnable() {
-                                @Override
-                                public void run() {
                                     Message message = new Message();
-                                    message.what = UPDATE_TEXT;
+                                    message.what = ARTICLE_TEXT;
                                     handler.sendMessage(message);
-                                }
-                            }).start();
                         }
 
                         @Override
                         public void onError(Exception e) {
-                            new Thread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Message message = new Message();
-                                    message.what = TOAST;
-                                    handler.sendMessage(message);
-                                }
-                            }).start();
+                            Message message = new Message();
+                            message.what = TOAST;
+                            handler.sendMessage(message);
                         }
                     });
                 }else{
                     try {
                         JSONObject jsonObjectArticle = mCache.getAsJSONObject(address);
                         mCache.put(address,jsonObjectArticle,CacheUtil.TIME_HOUR);
-                        title = jsonObjectArticle.optString("hp_title");
-                        result = jsonObjectArticle.optString("hp_content");
-                        String author = jsonObjectArticle.optString("hp_author");
-                        titleInfo = "文/" + author;
-                        introauthor = jsonObjectArticle.optString("hp_author_introduce");
-                        copyright = jsonObjectArticle.optString("copyright");
+                        article = JSONUtil.parseJSONArticleDetail(jsonObjectArticle);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                     Message message = new Message();
-                    message.what = UPDATE_TEXT;
+                    message.what = ARTICLE_TEXT;
                     handler.sendMessage(message);
                 }
             }
@@ -547,6 +427,7 @@ public class ContentActivity extends AppCompatActivity {
     }
 
     Html.ImageGetter imageGetter = new Html.ImageGetter() {
+        @Nullable
         @Override
         public Drawable getDrawable(String s) {
             Drawable drawable = mCache.getAsDrawable(s);

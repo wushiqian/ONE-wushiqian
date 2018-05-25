@@ -85,9 +85,6 @@ public class ArticleActivity extends AppCompatActivity {
         });
         //判断认为是滑动的最小距离(乘以系数调整滑动灵敏度)
         scaledTouchSlop = ViewConfiguration.get(this).getScaledTouchSlop()*3.0f;
-        /**
-         * 设置触摸事件
-         */
         mListView.setOnTouchListener(new View.OnTouchListener() {
             private float currentY;
             private int direction=-1;
@@ -128,7 +125,7 @@ public class ArticleActivity extends AppCompatActivity {
                 }
                 return false;//注意此处不能返回true，因为如果返回true,onTouchEvent就无法执行，导致的后果是ListView无法滑动
             }
-        });
+        });//设置触摸事件
     }
 
     /**
@@ -185,6 +182,13 @@ public class ArticleActivity extends AppCompatActivity {
         }).start();
     }
 
+    /**
+    * 加载界面
+    * @author wushiqian
+    * @pram 
+    * @return
+    * created at 2018/5/25 23:37
+    */
     private void initView() {
         toolbar = findViewById(R.id.toolBar);
         //设置成actionbar
@@ -222,6 +226,13 @@ public class ArticleActivity extends AppCompatActivity {
         });
     }
 
+    /**
+    * 从本地储存读取文章列表，若读不到则从网络加载
+    * @author wushiqian
+    * @pram
+    * @return
+    * created at 2018/5/25 23:38
+    */
     private void initArticle() {
         if (mCache.getAsJSONArray(ApiUtil.ARTICLE_LIST_URL_PRE + nextList + ApiUtil.ARTICLE_LIST_URL_SUF) != null) {
             LogUtil.d(TAG,"缓存加载");
@@ -287,6 +298,13 @@ public class ArticleActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    /**
+    * 刷新文章列表
+    * @author wushiqian
+    * @pram
+    * @return
+    * created at 2018/5/25 23:39
+    */
     private void refreshArticle() {
         new Thread(new Runnable() {
             @Override

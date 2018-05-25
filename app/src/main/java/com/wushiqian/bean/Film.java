@@ -15,6 +15,14 @@ public class Film {
 
     private String imageUrl;
 
+    private String content;
+
+    private String copyright;
+
+    private String introauthor;
+
+    private String titleInfo;
+
     public String getTitle() {
         return title;
     }
@@ -54,4 +62,39 @@ public class Film {
         this.itemId = itemId;
     }
 
+    public String getContent() {
+        return content;
+    }
+
+    public Film(){
+        super();
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public String getCopyright() {
+        return copyright;
+    }
+
+    public void setCopyright(String copyright) {
+        this.copyright = copyright;
+    }
+
+    public String getIntroauthor() {
+        return introauthor;
+    }
+
+    public void setIntroauthor(String introauthor) {
+        this.introauthor = introauthor;
+    }
+
+    public String getTitleInfo() {
+        return titleInfo;
+    }
+
+    public void setTitleInfo(String titleInfo) {
+        this.titleInfo = titleInfo;
+    }
 }

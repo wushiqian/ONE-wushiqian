@@ -19,6 +19,7 @@ import com.wushiqian.bean.Picture;
 import com.wushiqian.util.CacheUtil;
 import com.wushiqian.util.HttpCallbackListener;
 import com.wushiqian.util.HttpUtil;
+import com.wushiqian.util.JSONUtil;
 import com.wushiqian.util.LogUtil;
 
 import org.json.JSONObject;
@@ -30,19 +31,16 @@ import java.io.InputStream;
 * @author wushiqian
 * created at 2018/5/25 20:12
 */
-public class PictureDetailActivity extends AppCompatActivity{
+public class PictureDetailActivity extends BaseActivity{
 
     private String address ;
-    private String imageUrl = "";
-    private String message = "";
-    private String content = "";
-    private String text = "";
     private TextView mTvMessage;
     private TextView mTvContent;
     private TextView mTvText;
     private ImageView mIvPic;
     private android.support.v7.widget.Toolbar toolbar;
     private CacheUtil mCacheUtil;
+    private Picture mPicture;
 
     public static final int TOAST = 1;
     public static final int DATA = 2;
@@ -85,10 +83,7 @@ public class PictureDetailActivity extends AppCompatActivity{
                             try{
                                 JSONObject jsonObject = new JSONObject(data);
                                 mCacheUtil.put(address,jsonObject, CacheUtil.TIME_DAY);
-                                message = jsonObject.getString("hp_author");
-                                imageUrl = jsonObject.getString("hp_img_url");
-                                content = jsonObject.getString("hp_content");
-                                text = jsonObject.getString("text_authors");
+                                mPicture = JSONUtil.praseJSONPictureDetail(jsonObject);
                             } catch(Exception e){
                                 e.printStackTrace();
                             }
@@ -107,10 +102,7 @@ public class PictureDetailActivity extends AppCompatActivity{
                     try {
                         JSONObject jsonObject = mCacheUtil.getAsJSONObject(address);
                         mCacheUtil.put(address,jsonObject, CacheUtil.TIME_DAY);
-                        message = jsonObject.getString("hp_author");
-                        imageUrl = jsonObject.getString("hp_img_url");
-                        content = jsonObject.getString("hp_content");
-                        text = jsonObject.getString("text_authors");
+                        mPicture = JSONUtil.praseJSONPictureDetail(jsonObject);
                     } catch(Exception e){
                         e.printStackTrace();
                     }
@@ -130,11 +122,11 @@ public class PictureDetailActivity extends AppCompatActivity{
                     Toast.makeText(PictureDetailActivity.this,"error",Toast.LENGTH_SHORT).show();
                     break;
                 case DATA:
-                    mTvMessage.setText(message);
-                    mTvContent.setText(content);
-                    mTvText.setText(text);
+                    mTvMessage.setText(mPicture.getMessage());
+                    mTvContent.setText(mPicture.getContent());
+                    mTvText.setText(mPicture.getText());
                     new DownloadImageTask(mIvPic)
-                            .execute("" + imageUrl);
+                            .execute(mPicture.getImageUrl());
                 default: break;
             }
         }
@@ -164,4 +156,5 @@ public class PictureDetailActivity extends AppCompatActivity{
             bmImage.setImageBitmap(result);
         }
     }
+
 }

@@ -41,7 +41,7 @@ import java.util.List;
 * @author wushiqian
 * created at 2018/5/25 20:13
 */
-public class FilmActivity extends AppCompatActivity{
+public class FilmActivity extends BaseActivity{
 
     private LoadMoreListView mListView ;
     private Toolbar toolbar;

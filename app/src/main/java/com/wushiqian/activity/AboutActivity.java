@@ -12,7 +12,7 @@ import com.example.wushiqian.one_wushiqian.R;
 * @author wushiqian
 * created at 2018/5/25 20:16
 */
-public class AboutActivity extends AppCompatActivity{
+public class AboutActivity extends BaseActivity{
 
     private Toolbar toolbar;
 
@@ -20,7 +20,9 @@ public class AboutActivity extends AppCompatActivity{
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_about);
+        super.setToolbar();
         toolbar = findViewById(R.id.toolBar);
+        toolbar.setTitle("关于");
         //设置成actionbar
         setSupportActionBar(toolbar);
         //设置返回图标

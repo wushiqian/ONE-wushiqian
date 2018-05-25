@@ -47,7 +47,7 @@ import java.util.List;
 * @author wushiqian
 * created at 2018/5/25 20:13
 */
-public class MainActivity extends AppCompatActivity implements MyViewPager.OnViewPagerTouchListener, ViewPager.OnPageChangeListener,View.OnClickListener{
+public class MainActivity extends BaseActivity implements MyViewPager.OnViewPagerTouchListener, ViewPager.OnPageChangeListener,View.OnClickListener{
 
     private static final String TAG = "MainActivity";
     private MyViewPager mLoopPager;
@@ -286,11 +286,8 @@ public class MainActivity extends AppCompatActivity implements MyViewPager.OnVie
     }
 
     private void init() {
-//        dbHelper = new MyDatabaseHelper(this,"One.db",null,2);//数据库管理
-//        mDBManager = new DBManager();
         mCache = CacheUtil.get(this);
-        mtoolbar =  findViewById(R.id.toolBar);//toolbar
-        setSupportActionBar(mtoolbar);
+        super.setToolbar();
         mDrawerLayout = findViewById(R.id.drawer_layout);//滑动菜单
         ActionBar actionBar = getSupportActionBar();
         NavigationView navView = findViewById(R.id.nav_view);
@@ -299,8 +296,6 @@ public class MainActivity extends AppCompatActivity implements MyViewPager.OnVie
             actionBar.setHomeAsUpIndicator(R.drawable.menu);
         }
         mDrawerLayout.setScrimColor(Color.TRANSPARENT); //去除侧滑时的阴影遮罩效果
-        navView.setCheckedItem(R.id.nav_picture);
-        navView.setCheckedItem(R.id.nav_article);
 
         navView.setItemIconTintList(null);
         navView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
@@ -337,17 +332,6 @@ public class MainActivity extends AppCompatActivity implements MyViewPager.OnVie
                 return true;
             }
         });
-//        dbHelper = new MyDatabaseHelper(this,"One.db",null,2);//数据库管理
-//        Button createDatabase = findViewById(R.id.create_database);
-//        Button sendRequest = findViewById(R.id.send_request);
-//        sendRequest.setOnClickListener(this);
-//        responseText = findViewById(R.id.response_text);
-//        createDatabase.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {//创建数据库
-//                dbHelper.getWritableDatabase();
-//            }
-//        });
     }
 
     @Override
@@ -441,7 +425,7 @@ public class MainActivity extends AppCompatActivity implements MyViewPager.OnVie
         //根据图片的个数,去添加点的个数
         insertPoint();
         mLoopPager.setCurrentItem(mPagerAdapter.getDataRealSize() * 100, true);
-        if(Build.VERSION.SDK_INT >= 21){
+        if(Build.VERSION.SDK_INT >= 21){        //设置沉浸式状态栏
             View decorView = getWindow().getDecorView();
             decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
             getWindow().setStatusBarColor(Color.TRANSPARENT);

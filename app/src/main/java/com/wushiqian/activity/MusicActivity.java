@@ -41,7 +41,7 @@ import java.util.List;
 * @author wushiqian
 * created at 2018/5/25 20:12
 */
-public class MusicActivity extends AppCompatActivity{
+public class MusicActivity extends BaseActivity{
 
     private static final String TAG = "MusicActivity";
     private LoadMoreListView mListView ;
@@ -82,10 +82,7 @@ public class MusicActivity extends AppCompatActivity{
         //判断认为是滑动的最小距离(乘以系数调整滑动灵敏度)
         scaledTouchSlop = ViewConfiguration.get(this).getScaledTouchSlop()*3.0f;
         mCache = CacheUtil.get(this);
-        initArticle();
-        /**
-         * 设置触摸事件
-         */
+        initMusic();
         mListView.setOnTouchListener(new View.OnTouchListener() {
             private float currentY;
             private int direction=-1;
@@ -126,7 +123,7 @@ public class MusicActivity extends AppCompatActivity{
                 }
                 return false;//注意此处不能返回true，因为如果返回true,onTouchEvent就无法执行，导致的后果是ListView无法滑动
             }
-        });
+        });//设置触摸事件
 
     }
 
@@ -168,10 +165,11 @@ public class MusicActivity extends AppCompatActivity{
 
     }
 
-    private void initView() {
+
+    @Override
+    protected void setToolbar() {
+        super.setToolbar();
         toolbar = findViewById(R.id.toolBar);
-        //设置成actionbar
-        setSupportActionBar(toolbar);
         toolbar.setLogo(R.drawable.nav_music);
         //设置返回图标
         toolbar.setNavigationIcon(R.drawable.back2);
@@ -182,6 +180,10 @@ public class MusicActivity extends AppCompatActivity{
                 finish();
             }
         });
+    }
+
+    private void initView() {
+        setToolbar();
         mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -219,12 +221,12 @@ public class MusicActivity extends AppCompatActivity{
     }
 
     private void loadMore() {
-        initArticle();
+        initMusic();
         adapter.notifyDataSetChanged();
         mListView.setLoadCompleted();
     }
 
-    private void initArticle() {
+    private void initMusic() {
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -302,7 +304,7 @@ public class MusicActivity extends AppCompatActivity{
     private void refreshArticle() {
         nextList = 0;
         mMusicList.clear();
-        initArticle();
+        initMusic();
         adapter.notifyDataSetChanged();
         swipeRefresh.setRefreshing(false);
     }

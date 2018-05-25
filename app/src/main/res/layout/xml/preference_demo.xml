@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory android:title="基础设置">
+        <Preference
+            android:key="option11"
+            android:summary="缓存大小"
+            android:title="清理缓存" />
+
+
+        </PreferenceScreen>
+    </PreferenceCategory>
+</PreferenceScreen>

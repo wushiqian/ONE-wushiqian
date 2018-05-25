@@ -36,7 +36,7 @@ import java.util.Vector;
 * @author wushiqian
 * created at 2018/5/25 20:06
 */
-public class PictureActivity extends AppCompatActivity {
+public class PictureActivity extends BaseActivity {
 
     private final String TAG = "PictureActivity";
     private LoadMoreListView mlistView ;

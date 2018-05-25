@@ -13,6 +13,10 @@ public class Picture {
 
     private String message;
 
+    private String content;
+
+    private String text;
+
     public String getImageUrl() {
         return imageUrl;
     }
@@ -47,6 +51,10 @@ public class Picture {
         this.imageUrl = imageUrl;
     }
 
+    public Picture(){
+        super();
+    }
+
     public Picture(int itemId){
         this.itemId = itemId;
     }
@@ -56,4 +64,19 @@ public class Picture {
         this.imageUrl = imageUrl;
     }
 
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
 }
