@@ -177,7 +177,7 @@ public class MusicActivity extends BaseActivity{
         toolbar = findViewById(R.id.toolBar);
         toolbar.setLogo(R.drawable.nav_music);
         //设置返回图标
-        toolbar.setNavigationIcon(R.drawable.back2);
+        toolbar.setNavigationIcon(R.drawable.ic_arrow_back_black_24dp);
         //返回事件
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override

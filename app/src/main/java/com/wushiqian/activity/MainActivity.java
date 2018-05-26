@@ -1,5 +1,6 @@
 package com.wushiqian.activity;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -41,6 +42,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.InputStream;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,6 +50,7 @@ import java.util.List;
 //TODO 首页显示当天的信息
 //TODO 使用Material Design Icons
 //TODO 设置
+//TODO 适配18:9分辨率手机
 
 /**
 * 主界面，首页
@@ -81,6 +84,7 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
     private Picture mPicture;
     private ArticleListItem mArticleListItem;
     private List<String> imageUrlList = new ArrayList<>();
+    private MyHandler mHandler = new MyHandler(MainActivity.this);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -103,6 +107,13 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
         initArticle();
     }
 
+    /**
+    * 加载轮播图的图片
+    * @author wushiqian
+    * @pram void
+    * @return void
+    * created at 2018/5/26 13:38
+    */
     private void initPics() {
         new Thread(new Runnable() {
             @Override
@@ -115,7 +126,7 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
                             try {
                                 JSONArray jsonArray = new JSONArray(data);
                                 mCache.put(ApiUtil.MAIN_PICTURE_URL_PRE + mdate + ApiUtil.MAIN_PICTURE_URL_SUF,jsonArray,CacheUtil.TIME_DAY);
-                                for(int i = 0; i < 3; i++){
+                                for(int i = 0; i < 5; i++){
                                     JSONObject jsonObject = jsonArray.getJSONObject(i);
                                     String imageUrl = jsonObject.getString("hp_img_url");
                                     imageUrlList.add(imageUrl);
@@ -139,7 +150,7 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
                     try {
                         JSONArray jsonArray = mCache.getAsJSONArray(ApiUtil.MAIN_PICTURE_URL_PRE + mdate + ApiUtil.MAIN_PICTURE_URL_SUF);
                         mCache.put(ApiUtil.MAIN_PICTURE_URL_PRE + mdate + ApiUtil.MAIN_PICTURE_URL_SUF,jsonArray,CacheUtil.TIME_DAY);
-                        for(int i = 0; i < 3; i++){
+                        for(int i = 0; i < 5; i++){
                             JSONObject jsonObject = jsonArray.getJSONObject(i);
                             String imageUrl = jsonObject.getString("hp_img_url");
                             imageUrlList.add(imageUrl);
@@ -311,33 +322,97 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
 
     }
 
-    private Handler mHandler = new Handler() {
+//    @SuppressLint("HandlerLeak")
+//    private Handler mHandler = new Handler() {
+//        public void handleMessage(Message msg) {
+//            switch (msg.what) {
+//                case PICS:
+//                    int len = imageUrlList.size();
+//                    for(int i = 0 ; i < len; i++){
+//                        sPics.add(new com.wushiqian.bean.Picture(imageUrlList.get(i)));
+//                    }
+//                    break;
+//                case  TOAST:
+//                    Toast.makeText(MainActivity.this,"error",Toast.LENGTH_SHORT).show();
+//                    break;
+//                case DATA:
+//                    mTvMessage.setText(mPicture.getMessage());
+//                    mTvContent.setText(mPicture.getContent());
+//                    mTvText.setText(mPicture.getText());
+//                    new DownloadImageTask(mIvPic)
+//                            .execute(mPicture.getImageUrl());
+//                    break;
+//                case ARTICLE:
+//                    mTvArticleAuthor.setText(mArticleListItem.getAuthor());
+//                    mTvArticleForward.setText(mArticleListItem.getForward());
+//                    mTvArticleTitle.setText(mArticleListItem.getTitle());
+//                default: break;
+//            }
+//        }
+//    };
+
+    private static class MyHandler extends Handler {
+
+        private final WeakReference<MainActivity> mActivity;
+
+
+        private MyHandler(MainActivity activity) {
+            this.mActivity = new WeakReference<>(activity);
+        }
+
+        @Override
         public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            MainActivity activity = mActivity.get();
             switch (msg.what) {
                 case PICS:
-                    int len = imageUrlList.size();
-                    for(int i = 0 ; i < len; i++){
-                        sPics.add(new com.wushiqian.bean.Picture(imageUrlList.get(i)));
+                    if (activity != null) {
+                        activity.doPics();
                     }
                     break;
                 case  TOAST:
-                    Toast.makeText(MainActivity.this,"error",Toast.LENGTH_SHORT).show();
+                    if (activity != null) {
+                        activity.toast();
+                    }
                     break;
                 case DATA:
-                    mTvMessage.setText(mPicture.getMessage());
-                    mTvContent.setText(mPicture.getContent());
-                    mTvText.setText(mPicture.getText());
-                    new DownloadImageTask(mIvPic)
-                            .execute(mPicture.getImageUrl());
+                    if (activity != null) {
+                        activity.doPicture();
+                    }
                     break;
                 case ARTICLE:
-                    mTvArticleAuthor.setText(mArticleListItem.getAuthor());
-                    mTvArticleForward.setText(mArticleListItem.getForward());
-                    mTvArticleTitle.setText(mArticleListItem.getTitle());
+                    if (activity != null) {
+                        activity.doArticle();
+                    }
+                    break;
                 default: break;
             }
         }
-    };
+    }
+    private void doArticle() {
+        mTvArticleAuthor.setText(mArticleListItem.getAuthor());
+        mTvArticleForward.setText(mArticleListItem.getForward());
+        mTvArticleTitle.setText(mArticleListItem.getTitle());
+    }
+
+    private void doPicture() {
+        mTvMessage.setText(mPicture.getMessage());
+        mTvContent.setText(mPicture.getContent());
+        mTvText.setText(mPicture.getText());
+        new DownloadImageTask(mIvPic)
+                .execute(mPicture.getImageUrl());
+    }
+
+    private void toast() {
+        Toast.makeText(MainActivity.this,"error",Toast.LENGTH_SHORT).show();
+    }
+
+    private void doPics() {
+        int len = imageUrlList.size();
+        for(int i = 0 ; i < len; i++){
+            sPics.add(new com.wushiqian.bean.Picture(imageUrlList.get(i)));
+        }
+    }
 
     @Override
     public boolean onCreateOptionsMenu(@NonNull Menu menu){
@@ -407,7 +482,7 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
     }
 
     private void insertPoint() {
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 6; i++) {
             View point = new View(this);
             LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(40, 40);
             point.setBackground(getResources().getDrawable(R.drawable.shape_point_normal));
@@ -458,6 +533,7 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
 
     }
 
+
     private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
         ImageView bmImage;
 
@@ -482,5 +558,7 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
             bmImage.setImageBitmap(result);
         }
     }
+
+
 
 }

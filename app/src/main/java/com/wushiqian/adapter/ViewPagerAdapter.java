@@ -9,12 +9,14 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 
 import com.wushiqian.bean.Picture;
+import com.wushiqian.util.ApiUtil;
 import com.wushiqian.util.CacheUtil;
 import com.wushiqian.util.LogUtil;
 import com.wushiqian.util.MyApplication;
 
 import java.io.InputStream;
 import java.util.List;
+
 
 /**
 * 轮播图的适配器
@@ -36,16 +38,24 @@ public class ViewPagerAdapter extends PagerAdapter {
     }
 
     @Override
-    public Object instantiateItem(ViewGroup container, int position) {
-        int realPosition = position % mPics.size();
-        ImageView imageView = new ImageView(container.getContext());
+    public Object instantiateItem(final ViewGroup container, int position) {
+        final int realPosition = position % mPics.size();
+        final ImageView imageView = new ImageView(container.getContext());
         imageView.setScaleType(ImageView.ScaleType.FIT_XY);
         //imageView.setBackgroundColor(mPics.get(position));
         new DownloadImageTask(imageView)
-                .execute("" + mPics.get(realPosition).getImageUrl());
+                .execute(mPics.get(realPosition).getImageUrl());
 //        imageView.setImageResource(mPics.get(realPosition).getImgId());
         //设置完数据以后,就添加到容器里
         container.addView(imageView);
+//        imageView.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                Intent intent = new Intent(MyApplication.getContext(),PictureDetailActivity.class);
+//                intent.putExtra("url", ApiUtil.PICTURE_DETAIL_URL_PRE + mPics.get(realPosition).getItemId() + ApiUtil.PICTURE_DETAIL_URL_SUF );
+//                startActivity(intent);
+//            }
+//        });
         return imageView;
     }
 

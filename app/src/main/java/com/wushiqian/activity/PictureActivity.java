@@ -264,7 +264,8 @@ public class PictureActivity extends BaseActivity {
                 }
             }
         }).start();
-
         }
+
+
 
     }
