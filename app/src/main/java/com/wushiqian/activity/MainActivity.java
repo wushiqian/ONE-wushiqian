@@ -92,6 +92,7 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
         setContentView(R.layout.activity_main);
         mdate = TimeUtil.getTimeByCalendar();
         LogUtil.d(MainActivity.TAG,"今天是" + mdate);
+        //找到控件
         mIvPic = findViewById(R.id.main_iv);
         mTvMessage = findViewById(R.id.main_tv_message);
         mTvContent = findViewById(R.id.mian_pic_content);
@@ -367,7 +368,7 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
             switch (msg.what) {
                 case PICS:
                     if (activity != null) {
-                        activity.doPics();
+                        activity.showPics();
                     }
                     break;
                 case  TOAST:
@@ -377,25 +378,32 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
                     break;
                 case DATA:
                     if (activity != null) {
-                        activity.doPicture();
+                        activity.showPicture();
                     }
                     break;
                 case ARTICLE:
                     if (activity != null) {
-                        activity.doArticle();
+                        activity.showArticle();
                     }
                     break;
                 default: break;
             }
         }
     }
-    private void doArticle() {
+    /**
+    * 展示到ui中
+    * @author wushiqian
+    * @pram
+    * @return
+    * created at 2018/5/26 17:37
+    */
+    private void showArticle() {
         mTvArticleAuthor.setText(mArticleListItem.getAuthor());
         mTvArticleForward.setText(mArticleListItem.getForward());
         mTvArticleTitle.setText(mArticleListItem.getTitle());
     }
 
-    private void doPicture() {
+    private void showPicture() {
         mTvMessage.setText(mPicture.getMessage());
         mTvContent.setText(mPicture.getContent());
         mTvText.setText(mPicture.getText());
@@ -407,7 +415,7 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
         Toast.makeText(MainActivity.this,"error",Toast.LENGTH_SHORT).show();
     }
 
-    private void doPics() {
+    private void showPics() {
         int len = imageUrlList.size();
         for(int i = 0 ; i < len; i++){
             sPics.add(new com.wushiqian.bean.Picture(imageUrlList.get(i)));
@@ -438,7 +446,7 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
     @Override
     public void onAttachedToWindow() {
         super.onAttachedToWindow();
-        //当我这个界面绑定到窗口的时候
+        //当这个界面绑定到窗口的时候
         mHandler.post(mLooperTask);
     }
 
@@ -496,7 +504,6 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
     public void onPagerTouch(boolean isTouch) {
         mIsTouch = isTouch;
     }
-
 
     @Override
     public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {

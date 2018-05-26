@@ -63,6 +63,8 @@ public class ArticleActivity extends AppCompatActivity {
                 case  UPDATE:
                     adapter = new ArticleAdaper(articleList);
                     mListView.setAdapter(adapter);
+                    mListView.setSelection(articleList.size()-10);//加载更多后继续在当前的item，方便继续阅读
+                    mListView.smoothScrollToPosition(articleList.size()-10);
                 default: break;
             }
         }
@@ -72,6 +74,7 @@ public class ArticleActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_list);
+        //设置控件
         mListView = findViewById(R.id.activity_list_view);
         mCache = CacheUtil.get(this);
         initArticle();
@@ -166,6 +169,13 @@ public class ArticleActivity extends AppCompatActivity {
 
     }
 
+    /**
+    * 加载更多
+    * @author wushiqian
+    * @pram
+    * @return
+    * created at 2018/5/26 17:29
+    */
     private void loadMore() {
         new Thread(new Runnable() {
             @Override

@@ -61,6 +61,8 @@ public class FilmActivity extends BaseActivity{
                 case  UPDATE:
                     adapter = new FilmAdapter(mFilmList);
                     mListView.setAdapter(adapter);
+                    mListView.setSelection(mFilmList.size()-10);//加载更多后继续在当前的item，方便继续阅读
+                    mListView.smoothScrollToPosition(mFilmList.size()-10);
                 default: break;
             }
         }
@@ -278,6 +280,13 @@ public class FilmActivity extends BaseActivity{
         return super.onOptionsItemSelected(item);
     }
 
+    /**
+    * 刷新文章列表
+    * @author wushiqian
+    * @pram
+    * @return
+    * created at 2018/5/26 17:34
+    */
     private void refreshArticle() {
         nextList = 0;
         mFilmList.clear();

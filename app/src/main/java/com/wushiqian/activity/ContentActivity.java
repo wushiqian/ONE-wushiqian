@@ -168,7 +168,7 @@ public class ContentActivity extends BaseActivity {
         initAuthor();
         initComment();
         if(type.equals("essay")){
-            initContent();
+            initArticle();
         }else if(type.equals("music")){
             initMusic();
         }else if(type.equals("movie")){
@@ -176,6 +176,34 @@ public class ContentActivity extends BaseActivity {
         }
 
 
+    }
+
+    private void initView() {
+        mCache = CacheUtil.get(this);
+        mToolbar = findViewById(R.id.content_toolBar);
+        //设置成actionbar
+        setSupportActionBar(mToolbar);
+        getSupportActionBar().setTitle("一个");
+        mToolbar.setLogo(R.drawable.article2);
+        //设置返回图标
+        mToolbar.setNavigationIcon(R.drawable.back2);
+        //返回事件
+        mToolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
+        mTextView = findViewById(R.id.article_content);
+        mTvTitle = findViewById(R.id.content_tv_title);
+        mTvAuthor = findViewById(R.id.content_tv_author);
+        mTvIntroduce = findViewById(R.id.content_tv_introauthor);
+        mTvright = findViewById(R.id.content_copyright);
+        mTvComment = findViewById(R.id.content_lv_comment);
+        mIvauthor = findViewById(R.id.content_iv_author);
+        mTvAuthorName = findViewById(R.id.author_name);
+        mTvDesc = findViewById(R.id.content_desc);
+        mIvCover = findViewById(R.id.content_iv_cover);
     }
 
     private void initMovie() {
@@ -268,34 +296,56 @@ public class ContentActivity extends BaseActivity {
 
     }
 
-    private void initView() {
-        mCache = CacheUtil.get(this);
-        mToolbar = findViewById(R.id.content_toolBar);
-        //设置成actionbar
-        setSupportActionBar(mToolbar);
-        getSupportActionBar().setTitle("一个");
-        mToolbar.setLogo(R.drawable.article2);
-        //设置返回图标
-        mToolbar.setNavigationIcon(R.drawable.back2);
-        //返回事件
-        mToolbar.setNavigationOnClickListener(new View.OnClickListener() {
+    private void initArticle() {
+        new Thread(new Runnable() {
             @Override
-            public void onClick(View v) {
-                finish();
+            public void run() {
+                if(mCache.getAsJSONObject(address) == null) {
+                    HttpUtil.sendHttpRequest(address, new HttpCallbackListener() {
+                        @Override
+                        public void onFinish(final String response) {
+                            try {
+                                JSONObject jsonObjectArticle = new JSONObject(response);
+                                mCache.put(address,jsonObjectArticle,CacheUtil.TIME_HOUR);
+                                article = JSONUtil.parseJSONArticleDetail(jsonObjectArticle);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                            Message message = new Message();
+                            message.what = ARTICLE_TEXT;
+                            handler.sendMessage(message);
+                        }
+
+                        @Override
+                        public void onError(Exception e) {
+                            Message message = new Message();
+                            message.what = TOAST;
+                            handler.sendMessage(message);
+                        }
+                    });
+                }else{
+                    try {
+                        JSONObject jsonObjectArticle = mCache.getAsJSONObject(address);
+                        mCache.put(address,jsonObjectArticle,CacheUtil.TIME_HOUR);
+                        article = JSONUtil.parseJSONArticleDetail(jsonObjectArticle);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    Message message = new Message();
+                    message.what = ARTICLE_TEXT;
+                    handler.sendMessage(message);
+                }
             }
-        });
-        mTextView = findViewById(R.id.article_content);
-        mTvTitle = findViewById(R.id.content_tv_title);
-        mTvAuthor = findViewById(R.id.content_tv_author);
-        mTvIntroduce = findViewById(R.id.content_tv_introauthor);
-        mTvright = findViewById(R.id.content_copyright);
-        mTvComment = findViewById(R.id.content_lv_comment);
-        mIvauthor = findViewById(R.id.content_iv_author);
-        mTvAuthorName = findViewById(R.id.author_name);
-        mTvDesc = findViewById(R.id.content_desc);
-        mIvCover = findViewById(R.id.content_iv_cover);
+        }).start();
     }
 
+    /**
+    * 加载作者栏
+    * @author wushiqian
+    * @pram
+    * @return
+    * created at 2018/5/26 17:33
+    */
     private void initAuthor() {
         new Thread(new Runnable() {
             @Override
@@ -334,6 +384,13 @@ public class ContentActivity extends BaseActivity {
         }).start();
     }
 
+    /**
+    * 加载评论列表
+    * @author wushiqian
+    * @pram
+    * @return
+    * created at 2018/5/26 17:33
+    */
     private void initComment() {
         new Thread(new Runnable() {
             @Override
@@ -381,49 +438,13 @@ public class ContentActivity extends BaseActivity {
         }).start();
     }
 
-    private void initContent() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                if(mCache.getAsJSONObject(address) == null) {
-                    HttpUtil.sendHttpRequest(address, new HttpCallbackListener() {
-                        @Override
-                        public void onFinish(final String response) {
-                            try {
-                                JSONObject jsonObjectArticle = new JSONObject(response);
-                                mCache.put(address,jsonObjectArticle,CacheUtil.TIME_HOUR);
-                                article = JSONUtil.parseJSONArticleDetail(jsonObjectArticle);
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                                    Message message = new Message();
-                                    message.what = ARTICLE_TEXT;
-                                    handler.sendMessage(message);
-                        }
-
-                        @Override
-                        public void onError(Exception e) {
-                            Message message = new Message();
-                            message.what = TOAST;
-                            handler.sendMessage(message);
-                        }
-                    });
-                }else{
-                    try {
-                        JSONObject jsonObjectArticle = mCache.getAsJSONObject(address);
-                        mCache.put(address,jsonObjectArticle,CacheUtil.TIME_HOUR);
-                        article = JSONUtil.parseJSONArticleDetail(jsonObjectArticle);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    Message message = new Message();
-                    message.what = ARTICLE_TEXT;
-                    handler.sendMessage(message);
-                }
-            }
-        }).start();
-    }
-
+    /**
+    * 加载html里的图片
+    * @author wushiqian
+    * @pram
+    * @return
+    * created at 2018/5/26 17:31
+    */
     Html.ImageGetter imageGetter = new Html.ImageGetter() {
         @Nullable
         @Override
@@ -447,6 +468,11 @@ public class ContentActivity extends BaseActivity {
         }
     };
 
+    /**
+    * 异步加载图片
+    * @author wushiqian
+    * created at 2018/5/26 17:33
+    */
     private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
         ImageView bmImage;
 

@@ -67,7 +67,7 @@ public class MusicActivity extends BaseActivity{
                 case  UPDATE:
                     adapter = new MusicAdapter(mMusicList);
                     mListView.setAdapter(adapter);
-                    mListView.setSelection(mMusicList.size()-10);
+                    mListView.setSelection(mMusicList.size()-10);//加载更多后继续在当前的item，方便继续阅读
                     mListView.smoothScrollToPosition(mMusicList.size()-10);
                 default: break;
             }
@@ -187,6 +187,13 @@ public class MusicActivity extends BaseActivity{
         });
     }
 
+    /**
+    * 加载View
+    * @author wushiqian
+    * @pram
+    * @return
+    * created at 2018/5/26 17:24
+    */
     private void initView() {
         setToolbar();
         mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -208,7 +215,7 @@ public class MusicActivity extends BaseActivity{
         swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                refreshArticle();
+                refreshMusic();
             }
         });
         mListView.setONLoadMoreListener(new LoadMoreListView.OnLoadMoreListener() {
@@ -231,6 +238,13 @@ public class MusicActivity extends BaseActivity{
         mListView.setLoadCompleted();
     }
 
+    /**
+    * 从缓存中读取数据，缓存中找不到就网络加载
+    * @author wushiqian
+    * @pram
+    * @return
+    * created at 2018/5/26 17:25
+    */
     private void initMusic() {
         new Thread(new Runnable() {
             @Override
@@ -306,7 +320,14 @@ public class MusicActivity extends BaseActivity{
         return super.onOptionsItemSelected(item);
     }
 
-    private void refreshArticle() {
+    /**
+    * 刷新音乐列表
+    * @author wushiqian
+    * @pram
+    * @return
+    * created at 2018/5/26 17:38
+    */
+    private void refreshMusic() {
         nextList = 0;
         mMusicList.clear();
         initMusic();

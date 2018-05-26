@@ -53,23 +53,4 @@ public abstract class BaseActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * 跳转到指定的Activity
-     *
-     * @param clz 指定的Activity对应的class
-     */
-    public void goTo(Class<?> clz) {
-        if (clz.equals(MainActivity.class)) {
-            finishActivity();
-        } else {
-            for (int i = activities.size() - 1; i >= 0; i--) {
-                if (clz.equals(activities.get(i).getClass())) {
-                    break;
-                } else {
-                    activities.get(i).finish();
-                }
-            }
-        }
-    }
-
 }
