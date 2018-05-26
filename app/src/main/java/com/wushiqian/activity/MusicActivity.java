@@ -9,14 +9,12 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
-import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.Toast;
 
@@ -65,10 +63,9 @@ public class MusicActivity extends BaseActivity{
                     Toast.makeText(MusicActivity.this,"error",Toast.LENGTH_SHORT).show();
                     break;
                 case  UPDATE:
-                    adapter = new MusicAdapter(mMusicList);
-                    mListView.setAdapter(adapter);
-                    mListView.setSelection(mMusicList.size()-10);//加载更多后继续在当前的item，方便继续阅读
-                    mListView.smoothScrollToPosition(mMusicList.size()-10);
+                    if(mMusicList.size() == 10)mListView.setAdapter(adapter);
+//                    mListView.setSelection(mMusicList.size()-10);//加载更多后继续在当前的item，方便继续阅读
+//                    mListView.smoothScrollToPosition(mMusicList.size()-10);
                 default: break;
             }
         }
@@ -230,6 +227,7 @@ public class MusicActivity extends BaseActivity{
             decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
             getWindow().setStatusBarColor(Color.TRANSPARENT);
         }
+        adapter = new MusicAdapter(mMusicList);
     }
 
     private void loadMore() {

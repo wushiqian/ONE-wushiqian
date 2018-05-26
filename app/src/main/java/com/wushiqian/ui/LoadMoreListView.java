@@ -13,7 +13,7 @@ public class LoadMoreListView extends ListView implements AbsListView.OnScrollLi
     private View mFootView;
     private int mTotalItemCount;//item总数
     private OnLoadMoreListener mLoadMoreListener;
-    private boolean mIsLoading=false;//是否正在加载
+    private boolean mIsLoading = false;//是否正在加载
 
     public LoadMoreListView (Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
@@ -34,6 +34,7 @@ public class LoadMoreListView extends ListView implements AbsListView.OnScrollLi
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         //解决显示不全的问题
         heightMeasureSpec=MeasureSpec.makeMeasureSpec(Integer.MAX_VALUE>>2,MeasureSpec.AT_MOST);
+        //在这里将宽高模式改为MeasureSpec.AT_MOST这样就会去测量计算所有条目的高度
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
     }
 
@@ -72,7 +73,7 @@ public class LoadMoreListView extends ListView implements AbsListView.OnScrollLi
     }
 
     public void setONLoadMoreListener(OnLoadMoreListener listener){
-        mLoadMoreListener=listener;
+        mLoadMoreListener = listener;
     }
 
     public interface OnLoadMoreListener{

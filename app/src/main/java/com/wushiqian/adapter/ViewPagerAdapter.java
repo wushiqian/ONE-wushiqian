@@ -1,22 +1,15 @@
 package com.wushiqian.adapter;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.os.AsyncTask;
 import android.support.v4.view.PagerAdapter;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
 import com.wushiqian.bean.Picture;
-import com.wushiqian.util.ApiUtil;
 import com.wushiqian.util.CacheUtil;
-import com.wushiqian.util.LogUtil;
-import com.wushiqian.util.MyApplication;
+import com.wushiqian.util.ImageManager;
 
-import java.io.InputStream;
 import java.util.List;
-
 
 /**
 * 轮播图的适配器
@@ -29,6 +22,11 @@ public class ViewPagerAdapter extends PagerAdapter {
     private List<Picture> mPics = null;
     private CacheUtil mCache;
 
+    /**
+     * 获取View的总数
+     *
+     * @return View总数
+     */
     @Override
     public int getCount() {
         if (mPics != null) {
@@ -37,15 +35,20 @@ public class ViewPagerAdapter extends PagerAdapter {
         return 0;
     }
 
+    /**
+     * 为给定的位置创建相应的View。创建View之后,需要在该方法中自行添加到container中。
+     *
+     * @param container ViewPager本身
+     * @param position  给定的位置
+     * @return 提交给ViewPager进行保存的实例对象
+     */
     @Override
     public Object instantiateItem(final ViewGroup container, int position) {
         final int realPosition = position % mPics.size();
         final ImageView imageView = new ImageView(container.getContext());
         imageView.setScaleType(ImageView.ScaleType.FIT_XY);
-        //imageView.setBackgroundColor(mPics.get(position));
-        new DownloadImageTask(imageView)
+        new ImageManager(imageView)
                 .execute(mPics.get(realPosition).getImageUrl());
-//        imageView.setImageResource(mPics.get(realPosition).getImgId());
         //设置完数据以后,就添加到容器里
         container.addView(imageView);
 //        imageView.setOnClickListener(new View.OnClickListener() {
@@ -59,55 +62,47 @@ public class ViewPagerAdapter extends PagerAdapter {
         return imageView;
     }
 
+    /**
+     * 为给定的位置移除相应的View。
+     *
+     * @param container ViewPager本身
+     * @param position  给定的位置
+     * @param object    在instantiateItem中提交给ViewPager进行保存的实例对象
+     */
     @Override
     public void destroyItem(ViewGroup container, int position, Object object) {
         container.removeView((View) object);
     }
 
+    /**
+     * 确认View与实例对象是否相互对应。ViewPager内部用于获取View对应的ItemInfo。
+     *
+     * @param view   ViewPager显示的View内容
+     * @param object 在instantiateItem中提交给ViewPager进行保存的实例对象
+     * @return 是否相互对应
+     */
     @Override
     public boolean isViewFromObject(View view, Object object) {
         return view == object;
     }
 
-    public void setData(List<Picture> colos) {
-        this.mPics = colos;
+    /**
+     *设置数据
+     * @param list  数据List
+     */
+    public void setData(List<Picture> list) {
+        this.mPics = list;
     }
 
+    /**
+     * get数据的真实长度
+     * @return 数据的真实长度
+     */
     public int getDataRealSize() {
         if (mPics != null) {
             return mPics.size();
         }
         return 0;
-    }
-
-    private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
-        ImageView bmImage;
-
-        public DownloadImageTask(ImageView bmImage) {
-            this.bmImage = bmImage;
-        }
-
-        protected Bitmap doInBackground(String... urls) {
-            mCache = CacheUtil.get(MyApplication.getContext());
-            String urldisplay = urls[0];
-            Bitmap mIcon11 = mCache.getAsBitmap(urldisplay);
-            if (mIcon11 == null) {
-                LogUtil.d(TAG,"网络加载的图片");
-                try {
-                    InputStream in = new java.net.URL(urldisplay).openStream();
-                    mIcon11 = BitmapFactory.decodeStream(in);
-                    mCache.put(urldisplay,mIcon11,12 * CacheUtil.TIME_HOUR);
-                } catch (Exception e) {
-                    LogUtil.e("Error", e.getMessage());
-                    e.printStackTrace();
-                }
-            }
-            return mIcon11;
-        }
-
-        protected void onPostExecute(Bitmap result) {
-            bmImage.setImageBitmap(result);
-        }
     }
 
 }

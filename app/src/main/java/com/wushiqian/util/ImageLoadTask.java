@@ -13,7 +13,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 /**
-* 图片加载
+* 列表的图片加载
 * @author wushiqian
 * created at 2018/5/25 20:22
 */

@@ -77,8 +77,109 @@ public class ArticleActivity extends AppCompatActivity {
         //设置控件
         mListView = findViewById(R.id.activity_list_view);
         mCache = CacheUtil.get(this);
-        initArticle();
         initView();
+        initArticle();
+    }
+
+    /**
+     * ToolBar显示隐藏动画
+     * @param direction
+     */
+    public void toobarAnim(int direction) {
+        //开始新的动画之前要先取消以前的动画
+        if (animtor != null && animtor.isRunning()) {
+            animtor.cancel();
+        }
+        //toolbar.getTranslationY()获取的是Toolbar距离自己顶部的距离
+        float translationY=toolbar.getTranslationY();
+        if (direction == 0) {
+            animtor = ObjectAnimator.ofFloat(toolbar, "translationY", translationY, 0);
+            animtor.start();
+        } else if (direction == 1) {
+            animtor = ObjectAnimator.ofFloat(toolbar, "translationY", translationY, -toolbar.getHeight());
+            animtor.start();
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try{
+                        Thread.sleep(150);
+                    }catch (InterruptedException e){
+                        e.printStackTrace();
+                    }
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            toolbar.setVisibility(View.GONE);
+                        }
+                    });
+                }
+            }).start();
+        }
+
+
+    }
+
+    /**
+    * 加载更多
+    * @author wushiqian
+    * created at 2018/5/26 17:29
+    */
+    private void loadMore() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        initArticle();
+                        adapter.notifyDataSetChanged();
+                        mListView.setLoadCompleted();
+                    }
+                });
+            }
+        }).start();
+    }
+
+    /**
+    * 加载界面
+    * @author wushiqian
+    * created at 2018/5/25 23:37
+    */
+    private void initView() {
+        toolbar = findViewById(R.id.toolBar);
+        //设置成actionbar
+        setSupportActionBar(toolbar);
+        toolbar.setLogo(R.drawable.article2);
+        //设置返回图标
+        toolbar.setNavigationIcon(R.drawable.back2);
+        //返回事件
+        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
+        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                ArticleListItem articleListItem = articleList.get(position);
+                Toast.makeText(ArticleActivity.this,articleListItem.getTitle(),Toast.LENGTH_SHORT).show();
+                int itemId = articleListItem.getItemId();
+                Intent intent = new Intent(ArticleActivity.this,ContentActivity.class);
+                intent.putExtra("extra_data",itemId);
+                intent.putExtra("url",ApiUtil.ARTICLE_DETAIL_URL_PRE + itemId + ApiUtil.ARTICLE_DETAIL_URL_SUF);
+                intent.putExtra("type","essay");
+                startActivity(intent);
+            }
+        });
+        swipeRefresh = findViewById(R.id.swipe_refresh);
+        swipeRefresh.setColorSchemeResources(R.color.colorPrimary);
+        swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                refreshArticle();
+            }
+        });
         mListView.setONLoadMoreListener(new LoadMoreListView.OnLoadMoreListener() {
             @Override
             public void onloadMore() {
@@ -132,115 +233,8 @@ public class ArticleActivity extends AppCompatActivity {
     }
 
     /**
-     * ToolBar显示隐藏动画
-     * @param direction
-     */
-    public void toobarAnim(int direction) {
-        //开始新的动画之前要先取消以前的动画
-        if (animtor != null && animtor.isRunning()) {
-            animtor.cancel();
-        }
-        //toolbar.getTranslationY()获取的是Toolbar距离自己顶部的距离
-        float translationY=toolbar.getTranslationY();
-        if (direction == 0) {
-            animtor = ObjectAnimator.ofFloat(toolbar, "translationY", translationY, 0);
-            animtor.start();
-        } else if (direction == 1) {
-            animtor = ObjectAnimator.ofFloat(toolbar, "translationY", translationY, -toolbar.getHeight());
-            animtor.start();
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try{
-                        Thread.sleep(150);
-                    }catch (InterruptedException e){
-                        e.printStackTrace();
-                    }
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            toolbar.setVisibility(View.GONE);
-                        }
-                    });
-                }
-            }).start();
-        }
-
-
-    }
-
-    /**
-    * 加载更多
-    * @author wushiqian
-    * @pram
-    * @return
-    * created at 2018/5/26 17:29
-    */
-    private void loadMore() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        initArticle();
-                        adapter.notifyDataSetChanged();
-                        mListView.setLoadCompleted();
-                    }
-                });
-            }
-        }).start();
-    }
-
-    /**
-    * 加载界面
-    * @author wushiqian
-    * @pram 
-    * @return
-    * created at 2018/5/25 23:37
-    */
-    private void initView() {
-        toolbar = findViewById(R.id.toolBar);
-        //设置成actionbar
-        setSupportActionBar(toolbar);
-        toolbar.setLogo(R.drawable.article2);
-        //设置返回图标
-        toolbar.setNavigationIcon(R.drawable.back2);
-        //返回事件
-        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                finish();
-            }
-        });
-        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                ArticleListItem articleListItem = articleList.get(position);
-                Toast.makeText(ArticleActivity.this,articleListItem.getTitle(),Toast.LENGTH_SHORT).show();
-                int itemId = articleListItem.getItemId();
-                Intent intent = new Intent(ArticleActivity.this,ContentActivity.class);
-                intent.putExtra("extra_data",itemId);
-                intent.putExtra("url",ApiUtil.ARTICLE_DETAIL_URL_PRE + itemId + ApiUtil.ARTICLE_DETAIL_URL_SUF);
-                intent.putExtra("type","essay");
-                startActivity(intent);
-            }
-        });
-        swipeRefresh = findViewById(R.id.swipe_refresh);
-        swipeRefresh.setColorSchemeResources(R.color.colorPrimary);
-        swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                refreshArticle();
-            }
-        });
-    }
-
-    /**
     * 从本地储存读取文章列表，若读不到则从网络加载
     * @author wushiqian
-    * @pram
-    * @return
     * created at 2018/5/25 23:38
     */
     private void initArticle() {
@@ -311,8 +305,6 @@ public class ArticleActivity extends AppCompatActivity {
     /**
     * 刷新文章列表
     * @author wushiqian
-    * @pram
-    * @return
     * created at 2018/5/25 23:39
     */
     private void refreshArticle() {

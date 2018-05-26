@@ -3,8 +3,10 @@ package com.wushiqian.activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -27,12 +29,12 @@ import com.wushiqian.bean.Music;
 import com.wushiqian.ui.LoadMoreListView;
 import com.wushiqian.util.ApiUtil;
 import com.wushiqian.util.CacheUtil;
+import com.wushiqian.util.DensityUtil;
 import com.wushiqian.util.HttpCallbackListener;
 import com.wushiqian.util.HttpUtil;
 import com.wushiqian.util.JSONUtil;
 import com.wushiqian.util.LogUtil;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -204,6 +206,11 @@ public class ContentActivity extends BaseActivity {
         mTvAuthorName = findViewById(R.id.author_name);
         mTvDesc = findViewById(R.id.content_desc);
         mIvCover = findViewById(R.id.content_iv_cover);
+        if(Build.VERSION.SDK_INT >= 21){
+            View decorView = getWindow().getDecorView();
+            decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+            getWindow().setStatusBarColor(Color.TRANSPARENT);
+        }
     }
 
     private void initMovie() {
@@ -463,7 +470,10 @@ public class ContentActivity extends BaseActivity {
                     return null;
                 }
             }
-            drawable.setBounds(0, 0, drawable.getIntrinsicWidth() + 700, drawable.getIntrinsicHeight() + 525);
+            drawable.setBounds(0, 0, DensityUtil.dip2px(ContentActivity.this,
+                    drawable.getIntrinsicWidth()+ 280),  DensityUtil.dip2px(ContentActivity.this,
+                    //由于getIntrinsicWidth()和getIntrinsicHeight()返回的宽高应该是dp为单位
+                    drawable.getIntrinsicHeight()+200));         //所以转化为px，但还是很少，，，再设大一点
             return drawable;
         }
     };

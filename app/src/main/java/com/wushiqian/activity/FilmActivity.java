@@ -283,8 +283,6 @@ public class FilmActivity extends BaseActivity{
     /**
     * 刷新文章列表
     * @author wushiqian
-    * @pram
-    * @return
     * created at 2018/5/26 17:34
     */
     private void refreshArticle() {

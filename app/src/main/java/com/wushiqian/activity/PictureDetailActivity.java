@@ -1,13 +1,9 @@
 package com.wushiqian.activity;
 
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -18,11 +14,10 @@ import com.wushiqian.bean.Picture;
 import com.wushiqian.util.CacheUtil;
 import com.wushiqian.util.HttpCallbackListener;
 import com.wushiqian.util.HttpUtil;
+import com.wushiqian.util.ImageManager;
 import com.wushiqian.util.JSONUtil;
 
 import org.json.JSONObject;
-
-import java.io.InputStream;
 
 /**
 * 图片详情
@@ -123,36 +118,11 @@ public class PictureDetailActivity extends BaseActivity{
                     mTvMessage.setText(mPicture.getMessage());
                     mTvContent.setText(mPicture.getContent());
                     mTvText.setText(mPicture.getText());
-                    new DownloadImageTask(mIvPic)
+                    new ImageManager(mIvPic)
                             .execute(mPicture.getImageUrl());
                 default: break;
             }
         }
     };
-
-    private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
-        ImageView bmImage;
-
-        public DownloadImageTask(ImageView bmImage) {
-            this.bmImage = bmImage;
-        }
-
-        protected Bitmap doInBackground(String... urls) {
-            String urldisplay = urls[0];
-            Bitmap mIcon11 = null;
-            try {
-                InputStream in = new java.net.URL(urldisplay).openStream();
-                mIcon11 = BitmapFactory.decodeStream(in);
-            } catch (Exception e) {
-                Log.e("Error", e.getMessage());
-                e.printStackTrace();
-            }
-            return mIcon11;
-        }
-
-        protected void onPostExecute(Bitmap result) {
-            bmImage.setImageBitmap(result);
-        }
-    }
 
 }

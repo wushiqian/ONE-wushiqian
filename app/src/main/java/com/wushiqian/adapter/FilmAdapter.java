@@ -38,7 +38,6 @@ public class FilmAdapter extends BaseAdapter{
                 return value.getBitmap().getByteCount();
             }
         };
-
     }
 
     @Override

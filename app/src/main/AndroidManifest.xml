@@ -16,28 +16,38 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+        <activity
+            android:name="com.wushiqian.activity.StartActivity"
+            android:theme="@style/AppTheme.Full">
+        </activity>
         <activity android:name="com.wushiqian.activity.MainActivity"
                   android:label="一个ONE">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity android:name="com.wushiqian.activity.ArticleActivity"
-            android:label="Article"></activity>
+            android:label="Article">
+        </activity>
         <activity android:name="com.wushiqian.activity.PictureActivity"
-            android:label="Picture"></activity>
+            android:label="Picture">
+        </activity>
         <activity android:name="com.wushiqian.activity.ContentActivity"
-            android:label="Content"></activity>
+            android:label="Content">
+        </activity>
         <activity android:name="com.wushiqian.activity.MusicActivity"
-            android:label="Music"></activity>
+            android:label="Music">
+        </activity>
         <activity android:name="com.wushiqian.activity.FilmActivity"
-            android:label="Film"></activity>
+            android:label="Film">
+        </activity>
         <activity android:name="com.wushiqian.activity.PictureDetailActivity"
-            android:label="PictureDetail"></activity>
+            android:label="PictureDetail">
+        </activity>
         <activity android:name="com.wushiqian.activity.AboutActivity"
-            android:label="About"></activity>
+            android:label="About">
+        </activity>
     </application>
 
 </manifest>

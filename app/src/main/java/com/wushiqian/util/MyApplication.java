@@ -3,6 +3,11 @@ package com.wushiqian.util;
 import android.app.Application;
 import android.content.Context;
 
+/**
+* 获取全局context
+* @author wushiqian
+* created at 2018/5/27 1:11
+*/
 public class MyApplication extends Application{
 
     private static Context sContext;

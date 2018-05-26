@@ -1,18 +1,9 @@
 package com.wushiqian.ui;
 
 import android.content.Context;
-import android.content.Intent;
 import android.support.v4.view.ViewPager;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
-import android.view.View;
-import android.widget.ImageView;
-import android.widget.Toast;
-
-import com.wushiqian.activity.MainActivity;
-import com.wushiqian.activity.PictureDetailActivity;
-import com.wushiqian.util.ApiUtil;
-import com.wushiqian.util.MyApplication;
 
 /**
 * 自定义ViewPager

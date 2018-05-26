@@ -1,12 +1,9 @@
 package com.wushiqian.activity;
 
-import android.annotation.SuppressLint;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.os.AsyncTask;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.NonNull;
@@ -15,8 +12,6 @@ import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
-import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -34,6 +29,7 @@ import com.wushiqian.util.ApiUtil;
 import com.wushiqian.util.CacheUtil;
 import com.wushiqian.util.HttpCallbackListener;
 import com.wushiqian.util.HttpUtil;
+import com.wushiqian.util.ImageManager;
 import com.wushiqian.util.JSONUtil;
 import com.wushiqian.util.LogUtil;
 import com.wushiqian.util.TimeUtil;
@@ -41,16 +37,17 @@ import com.wushiqian.util.TimeUtil;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
-
+//TODO 用数据库代替CacheUtil
+//TODO 线程池
 //TODO 首页显示当天的信息
 //TODO 使用Material Design Icons
 //TODO 设置
 //TODO 适配18:9分辨率手机
+//TODO 启动页
 
 /**
 * 主界面，首页
@@ -323,39 +320,9 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
 
     }
 
-//    @SuppressLint("HandlerLeak")
-//    private Handler mHandler = new Handler() {
-//        public void handleMessage(Message msg) {
-//            switch (msg.what) {
-//                case PICS:
-//                    int len = imageUrlList.size();
-//                    for(int i = 0 ; i < len; i++){
-//                        sPics.add(new com.wushiqian.bean.Picture(imageUrlList.get(i)));
-//                    }
-//                    break;
-//                case  TOAST:
-//                    Toast.makeText(MainActivity.this,"error",Toast.LENGTH_SHORT).show();
-//                    break;
-//                case DATA:
-//                    mTvMessage.setText(mPicture.getMessage());
-//                    mTvContent.setText(mPicture.getContent());
-//                    mTvText.setText(mPicture.getText());
-//                    new DownloadImageTask(mIvPic)
-//                            .execute(mPicture.getImageUrl());
-//                    break;
-//                case ARTICLE:
-//                    mTvArticleAuthor.setText(mArticleListItem.getAuthor());
-//                    mTvArticleForward.setText(mArticleListItem.getForward());
-//                    mTvArticleTitle.setText(mArticleListItem.getTitle());
-//                default: break;
-//            }
-//        }
-//    };
-
     private static class MyHandler extends Handler {
 
         private final WeakReference<MainActivity> mActivity;
-
 
         private MyHandler(MainActivity activity) {
             this.mActivity = new WeakReference<>(activity);
@@ -390,6 +357,7 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
             }
         }
     }
+
     /**
     * 展示到ui中
     * @author wushiqian
@@ -407,7 +375,7 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
         mTvMessage.setText(mPicture.getMessage());
         mTvContent.setText(mPicture.getContent());
         mTvText.setText(mPicture.getText());
-        new DownloadImageTask(mIvPic)
+        new ImageManager(mIvPic)
                 .execute(mPicture.getImageUrl());
     }
 
@@ -539,33 +507,5 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
     public void onPageScrollStateChanged(int state) {
 
     }
-
-
-    private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
-        ImageView bmImage;
-
-        public DownloadImageTask(ImageView bmImage) {
-            this.bmImage = bmImage;
-        }
-
-        protected Bitmap doInBackground(String... urls) {
-            String urldisplay = urls[0];
-            Bitmap mIcon11 = null;
-            try {
-                InputStream in = new java.net.URL(urldisplay).openStream();
-                mIcon11 = BitmapFactory.decodeStream(in);
-            } catch (Exception e) {
-                Log.e("Error", e.getMessage());
-                e.printStackTrace();
-            }
-            return mIcon11;
-        }
-
-        protected void onPostExecute(Bitmap result) {
-            bmImage.setImageBitmap(result);
-        }
-    }
-
-
 
 }
