@@ -1,6 +1,7 @@
 package com.wushiqian.activity;
 
 import android.animation.ObjectAnimator;
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Build;
@@ -73,6 +74,7 @@ public class MusicActivity extends BaseActivity{
         }
     };
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -83,15 +85,18 @@ public class MusicActivity extends BaseActivity{
         scaledTouchSlop = ViewConfiguration.get(this).getScaledTouchSlop()*3.0f;
         mCache = CacheUtil.get(this);
         initMusic();
+
         mListView.setOnTouchListener(new View.OnTouchListener() {
             private float currentY;
             private int direction=-1;
             private boolean mShow = true;
 
+
             @Override
-            public boolean onTouch(View v, MotionEvent event) {
+            public boolean onTouch(View view, MotionEvent event) {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
+                        mListView.performClick();
                         firstY = event.getY();
                         break;
                     case MotionEvent.ACTION_MOVE:

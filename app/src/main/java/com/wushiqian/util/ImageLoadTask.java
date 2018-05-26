@@ -20,6 +20,7 @@ import java.net.URL;
 public class ImageLoadTask extends AsyncTask<String, Void, BitmapDrawable> {
 
     private String imageUrl;
+    private ImageView bmImage;
     private ListView listView;
     private LruCache<String, BitmapDrawable> mImageCache;
 
@@ -51,8 +52,8 @@ public class ImageLoadTask extends AsyncTask<String, Void, BitmapDrawable> {
         }
 
         /**
-         * 根据url从网络上下载图片
-         * @return
+         * 先查看有没有缓存，如果没有缓存就根据url从网络上下载图片
+         * @return Bitmap
          */
         private Bitmap downloadImage() {
             CacheUtil mCache = CacheUtil.get(MyApplication.getContext());

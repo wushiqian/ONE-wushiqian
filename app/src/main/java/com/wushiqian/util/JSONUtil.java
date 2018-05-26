@@ -1,7 +1,5 @@
 package com.wushiqian.util;
 
-import android.graphics.Movie;
-
 import com.wushiqian.bean.ArticleListItem;
 import com.wushiqian.bean.Author;
 import com.wushiqian.bean.Comment;
@@ -223,4 +221,42 @@ public class JSONUtil {
         return null;
     }
 
+    public static Picture praseJSONMainPicture(JSONObject jsonObject) {
+        Picture picture = new Picture();
+        try{
+            String author = jsonObject.getString("hp_author");
+            String imageUrl = jsonObject.getString("hp_img_url");
+            String imageAuthor = jsonObject.getString("image_authors");
+            String message = "" + author + "|" + imageAuthor;
+            String  content = jsonObject.getString("hp_content");
+            String text = jsonObject.getString("text_authors");
+            picture.setImageUrl(imageUrl);
+            picture.setMessage(message);
+            picture.setText(text);
+            picture.setContent(content);
+            return picture;
+        }catch (JSONException e){
+            e.printStackTrace();
+        }
+        return  null;
+    }
+
+    public static ArticleListItem parseJSONMainArticle(JSONObject jsonObj){
+        ArticleListItem articleListItem = new ArticleListItem();
+        try {
+            String articleTitle = jsonObj.getString("hp_title");
+            String articleForward = jsonObj.getString("guide_word");
+            String jo = jsonObj.getString("author");
+            JSONArray jArray = new JSONArray(jo);
+            JSONObject jObject = jArray.getJSONObject(0);
+            String articleAuthor = jObject.getString("user_name");
+            articleListItem.setAuthor(articleAuthor);
+            articleListItem.setTitle(articleTitle);
+            articleListItem.setForward(articleForward);
+            return articleListItem;
+        }catch (JSONException e){
+            e.printStackTrace();
+        }
+        return  null;
+    }
 }

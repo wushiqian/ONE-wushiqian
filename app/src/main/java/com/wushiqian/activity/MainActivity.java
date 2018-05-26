@@ -14,9 +14,7 @@ import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -28,11 +26,14 @@ import android.widget.Toast;
 
 import com.example.wushiqian.one_wushiqian.R;
 import com.wushiqian.adapter.ViewPagerAdapter;
+import com.wushiqian.bean.ArticleListItem;
+import com.wushiqian.bean.Picture;
 import com.wushiqian.ui.MyViewPager;
 import com.wushiqian.util.ApiUtil;
 import com.wushiqian.util.CacheUtil;
 import com.wushiqian.util.HttpCallbackListener;
 import com.wushiqian.util.HttpUtil;
+import com.wushiqian.util.JSONUtil;
 import com.wushiqian.util.LogUtil;
 import com.wushiqian.util.TimeUtil;
 
@@ -42,6 +43,12 @@ import org.json.JSONObject;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+
+
+//TODO 首页显示当天的信息
+//TODO 使用Material Design Icons
+//TODO 设置
+
 /**
 * 主界面，首页
 * @author wushiqian
@@ -55,25 +62,15 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
 
     private static List<com.wushiqian.bean.Picture> sPics = new ArrayList<>();
 
-    public static final int UPDATE_TEXT = 1;
+    public static final int PICS = 1;
     public static final int TOAST = 2;
     public static final int DATA = 3;
     public static final int ARTICLE = 4;
-    private Toolbar mtoolbar;
     private DrawerLayout mDrawerLayout;
     private boolean mIsTouch = false;
     private LinearLayout mPointContainer;
     private CacheUtil mCache;
     private String mdate = "";
-    private String imageUrl = "";
-    private String imageUrl1 = "";
-    private String imageUrl2 = "";
-    private String message = "";
-    private String content = "";
-    private String text = "";
-    private String articleTitle = "";
-    private String articleAuthor = "";
-    private String articleForward = "";
     private TextView mTvMessage;
     private TextView mTvContent;
     private TextView mTvText;
@@ -81,7 +78,9 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
     private TextView mTvArticleTitle;
     private TextView mTvArticleAuthor;
     private TextView mTvArticleForward;
-    private ImageView mIvArticle;
+    private Picture mPicture;
+    private ArticleListItem mArticleListItem;
+    private List<String> imageUrlList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,12 +95,11 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
         mTvArticleAuthor = findViewById(R.id.main_summary);
         mTvArticleTitle = findViewById(R.id.main_title);
         mTvArticleForward = findViewById(R.id.main_forward);
-        mIvArticle = findViewById(R.id.main_iv_article);
+//        mIvArticle = findViewById(R.id.main_iv_article);
         initView();
         init();
         initPicture();
         initPics();
-
         initArticle();
     }
 
@@ -117,17 +115,16 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
                             try {
                                 JSONArray jsonArray = new JSONArray(data);
                                 mCache.put(ApiUtil.MAIN_PICTURE_URL_PRE + mdate + ApiUtil.MAIN_PICTURE_URL_SUF,jsonArray,CacheUtil.TIME_DAY);
-                                JSONObject jsonObject = jsonArray.getJSONObject(0);
-                                imageUrl = jsonObject.getString("hp_img_url");
-                                JSONObject jsonObject1 = jsonArray.getJSONObject(1);
-                                imageUrl1 = jsonObject1.getString("hp_img_url");
-                                JSONObject jsonObject2 = jsonArray.getJSONObject(2);
-                                imageUrl2 = jsonObject2.getString("hp_img_url");
+                                for(int i = 0; i < 3; i++){
+                                    JSONObject jsonObject = jsonArray.getJSONObject(i);
+                                    String imageUrl = jsonObject.getString("hp_img_url");
+                                    imageUrlList.add(imageUrl);
+                                }
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
                             Message message = new Message();
-                            message.what = UPDATE_TEXT;
+                            message.what = PICS;
                             mHandler.sendMessage(message);
                         }
 
@@ -142,17 +139,16 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
                     try {
                         JSONArray jsonArray = mCache.getAsJSONArray(ApiUtil.MAIN_PICTURE_URL_PRE + mdate + ApiUtil.MAIN_PICTURE_URL_SUF);
                         mCache.put(ApiUtil.MAIN_PICTURE_URL_PRE + mdate + ApiUtil.MAIN_PICTURE_URL_SUF,jsonArray,CacheUtil.TIME_DAY);
-                        JSONObject jsonObject = jsonArray.getJSONObject(0);
-                        imageUrl = jsonObject.getString("hp_img_url");
-                        JSONObject jsonObject1 = jsonArray.getJSONObject(1);
-                        imageUrl1 = jsonObject1.getString("hp_img_url");
-                        JSONObject jsonObject2 = jsonArray.getJSONObject(2);
-                        imageUrl2 = jsonObject2.getString("hp_img_url");
+                        for(int i = 0; i < 3; i++){
+                            JSONObject jsonObject = jsonArray.getJSONObject(i);
+                            String imageUrl = jsonObject.getString("hp_img_url");
+                            imageUrlList.add(imageUrl);
+                        }
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                     Message message = new Message();
-                    message.what = UPDATE_TEXT;
+                    message.what = PICS;
                     mHandler.sendMessage(message);
                 }
             }
@@ -175,12 +171,7 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
                                 mCache.put(ApiUtil.MAIN_ARTICLE_URL_PRE + mdate
                                         + ApiUtil.MAIN_ARTICLE_URL_SUF,jsonArray,CacheUtil.TIME_DAY);
                                 JSONObject jsonObj = jsonArray.getJSONObject(0);
-                                articleTitle = jsonObj.getString("hp_title");
-                                articleForward = jsonObj.getString("guide_word");
-                                String jo = jsonObj.getString("author");
-                                JSONArray jArray = new JSONArray(jo);
-                                JSONObject jObject = jArray.getJSONObject(0);
-                                articleAuthor = jObject.getString("user_name");
+                                mArticleListItem = JSONUtil.parseJSONMainArticle(jsonObj);
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
@@ -191,14 +182,9 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
 
                         @Override
                         public void onError(Exception e) {
-                            new Thread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Message message = new Message();
-                                    message.what = TOAST;
-                                    mHandler.sendMessage(message);
-                                }
-                            }).start();
+                            Message message = new Message();
+                            message.what = TOAST;
+                            mHandler.sendMessage(message);
                         }
                     });
                 }else{
@@ -208,12 +194,7 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
                         mCache.put(ApiUtil.MAIN_ARTICLE_URL_PRE + mdate
                                 + ApiUtil.MAIN_ARTICLE_URL_SUF,jsonArray,CacheUtil.TIME_DAY);
                         JSONObject jsonObj = jsonArray.getJSONObject(0);
-                        articleTitle = jsonObj.getString("hp_title");
-                        articleForward = jsonObj.getString("guide_word");
-                        String jo = jsonObj.getString("author");
-                        JSONArray jArray = new JSONArray(jo);
-                        JSONObject jObject = jArray.getJSONObject(0);
-                        articleAuthor = jObject.getString("user_name");
+                        mArticleListItem = JSONUtil.parseJSONMainArticle(jsonObj);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -240,12 +221,8 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
                                 mCache.put(ApiUtil.MAIN_PICTURE_URL_PRE + mdate
                                         + ApiUtil.MAIN_PICTURE_URL_SUF,jsonArray,CacheUtil.TIME_DAY);
                                 JSONObject jsonObject = jsonArray.getJSONObject(0);
-                                String author = jsonObject.getString("hp_author");
-                                imageUrl = jsonObject.getString("hp_img_url");
-                                String imageAuthor = jsonObject.getString("image_authors");
-                                message = "" + author + "|" + imageAuthor;
-                                content = jsonObject.getString("hp_content");
-                                text = jsonObject.getString("text_authors");
+                                mPicture = JSONUtil.praseJSONMainPicture(jsonObject);
+
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
@@ -268,12 +245,7 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
                         mCache.put(ApiUtil.MAIN_PICTURE_URL_PRE + mdate
                                 + ApiUtil.MAIN_PICTURE_URL_SUF,jsonArray,CacheUtil.TIME_DAY);
                         JSONObject jsonObject = jsonArray.getJSONObject(0);
-                        String author = jsonObject.getString("hp_author");
-                        imageUrl = jsonObject.getString("hp_img_url");
-                        String imageAuthor = jsonObject.getString("image_authors");
-                        message = "" + author + "|" + imageAuthor;
-                        content = jsonObject.getString("hp_content");
-                        text = jsonObject.getString("text_authors");
+                        mPicture = JSONUtil.praseJSONMainPicture(jsonObject);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -323,7 +295,7 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
                         startActivity(intent);
                         break;
                     case R.id.nav_about:
-                        Toast.makeText(MainActivity.this, "next version", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, "关于", Toast.LENGTH_SHORT).show();
                         intent = new Intent(MainActivity.this,AboutActivity.class);
                         startActivity(intent);
                         break;
@@ -342,24 +314,26 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
     private Handler mHandler = new Handler() {
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case UPDATE_TEXT:
-                    sPics.add(new com.wushiqian.bean.Picture(imageUrl));
-                    sPics.add(new com.wushiqian.bean.Picture(imageUrl1));
-                    sPics.add(new com.wushiqian.bean.Picture(imageUrl2));
+                case PICS:
+                    int len = imageUrlList.size();
+                    for(int i = 0 ; i < len; i++){
+                        sPics.add(new com.wushiqian.bean.Picture(imageUrlList.get(i)));
+                    }
                     break;
                 case  TOAST:
                     Toast.makeText(MainActivity.this,"error",Toast.LENGTH_SHORT).show();
                     break;
                 case DATA:
-                    mTvMessage.setText(message);
-                    mTvContent.setText(content);
-                    mTvText.setText(text);
+                    mTvMessage.setText(mPicture.getMessage());
+                    mTvContent.setText(mPicture.getContent());
+                    mTvText.setText(mPicture.getText());
                     new DownloadImageTask(mIvPic)
-                            .execute("" + imageUrl);
+                            .execute(mPicture.getImageUrl());
+                    break;
                 case ARTICLE:
-                    mTvArticleAuthor.setText(articleAuthor);
-                    mTvArticleForward.setText(articleForward);
-                    mTvArticleTitle.setText(articleTitle);
+                    mTvArticleAuthor.setText(mArticleListItem.getAuthor());
+                    mTvArticleForward.setText(mArticleListItem.getForward());
+                    mTvArticleTitle.setText(mArticleListItem.getTitle());
                 default: break;
             }
         }
@@ -376,7 +350,7 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
         super.onOptionsItemSelected(item);
         switch (item.getItemId()){
             case R.id.settings:
-                Toast.makeText(this,"Setting",Toast.LENGTH_SHORT).show();
+                Toast.makeText(this,"Next version",Toast.LENGTH_SHORT).show();
                 break;
             case android.R.id.home:
                 mDrawerLayout.openDrawer(GravityCompat.START);
@@ -408,7 +382,7 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
                 int currentItem = mLoopPager.getCurrentItem();
                 mLoopPager.setCurrentItem(++currentItem, true);
             }
-            mHandler.postDelayed(this,5000);
+            mHandler.postDelayed(this,4000);
         }
     };
 

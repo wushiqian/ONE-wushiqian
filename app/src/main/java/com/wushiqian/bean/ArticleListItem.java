@@ -23,6 +23,8 @@ public class ArticleListItem {
 
     private String copyright;
 
+    private String forward;
+
     public String getTitle() {
         return title;
     }
@@ -96,5 +98,13 @@ public class ArticleListItem {
 
     public void setCopyright(String copyright) {
         this.copyright = copyright;
+    }
+
+    public String getForward() {
+        return forward;
+    }
+
+    public void setForward(String forward) {
+        this.forward = forward;
     }
 }
