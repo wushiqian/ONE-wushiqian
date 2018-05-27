@@ -14,6 +14,18 @@ public class MyDatabaseHelper extends SQLiteOpenHelper {
     public static final String DATA = "data";
     public static final String TIME = "time";
 
+    public static final String CREATE_ESSAY = "create table Essay ("
+            + "title text primary key,"
+            + "author text,"
+            + "imageUrl text )";
+
+    public static final String CREATE_MUSIC = "create table Music ("
+            + "id integer primary key autoincrement,"
+            + "itemId integer,"
+            + "title text,"
+            + "forward text,"
+            + "imageUrl text )";
+
     private Context mcontext;
 
     public MyDatabaseHelper(Context context, String name, SQLiteDatabase.CursorFactory factory,
@@ -24,22 +36,16 @@ public class MyDatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion){
-//        db.execSQL("drop table if exists Illustration");
-//        db.execSQL("drop table if exists Article");
-//        onCreate(db);
+        db.execSQL("drop table if exists Essay");
+        db.execSQL("drop table if exists Music");
+        onCreate(db);
     }
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        String sql = "CREATE TABLE IF NOT EXISTS "
-                + CACHE + " ("
-                + ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
-                + URL + " TEXT, "
-                + TIME + " TEXT, "
-                + DATA + " TEXT)";
-        Toast.makeText(mcontext,"Create succeeded",Toast.LENGTH_SHORT).show();
-        db.execSQL(sql);
-
+        db.execSQL(CREATE_ESSAY);
+        db.execSQL(CREATE_MUSIC);
+//        Toast.makeText(mcontext,"Create succeeded",Toast.LENGTH_SHORT).show();
     }
 
 }

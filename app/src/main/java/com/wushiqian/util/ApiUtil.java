@@ -7,6 +7,7 @@ package com.wushiqian.util;
 */
 public class ApiUtil {
 
+    //音乐列表Url
     public static final String MUSIC_LIST_URL_PRE = "http://v3.wufazhuce.com:8000/api/channel/music/more/";
     public static final String MUSIC_LIST_URL_SUF = "?channel=wdj&version=4.0.2&uuid=ffffffff-a90e-706a-63f7-ccf973aae5ee&platform=android";
 

@@ -24,7 +24,6 @@ public class ViewPagerAdapter extends PagerAdapter {
 
     /**
      * 获取View的总数
-     *
      * @return View总数
      */
     @Override
@@ -37,7 +36,6 @@ public class ViewPagerAdapter extends PagerAdapter {
 
     /**
      * 为给定的位置创建相应的View。创建View之后,需要在该方法中自行添加到container中。
-     *
      * @param container ViewPager本身
      * @param position  给定的位置
      * @return 提交给ViewPager进行保存的实例对象
@@ -51,20 +49,11 @@ public class ViewPagerAdapter extends PagerAdapter {
                 .execute(mPics.get(realPosition).getImageUrl());
         //设置完数据以后,就添加到容器里
         container.addView(imageView);
-//        imageView.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                Intent intent = new Intent(MyApplication.getContext(),PictureDetailActivity.class);
-//                intent.putExtra("url", ApiUtil.PICTURE_DETAIL_URL_PRE + mPics.get(realPosition).getItemId() + ApiUtil.PICTURE_DETAIL_URL_SUF );
-//                startActivity(intent);
-//            }
-//        });
         return imageView;
     }
 
     /**
      * 为给定的位置移除相应的View。
-     *
      * @param container ViewPager本身
      * @param position  给定的位置
      * @param object    在instantiateItem中提交给ViewPager进行保存的实例对象
@@ -76,7 +65,6 @@ public class ViewPagerAdapter extends PagerAdapter {
 
     /**
      * 确认View与实例对象是否相互对应。ViewPager内部用于获取View对应的ItemInfo。
-     *
      * @param view   ViewPager显示的View内容
      * @param object 在instantiateItem中提交给ViewPager进行保存的实例对象
      * @return 是否相互对应

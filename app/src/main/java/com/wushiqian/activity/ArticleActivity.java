@@ -2,6 +2,8 @@ package com.wushiqian.activity;
 
 import android.animation.ObjectAnimator;
 import android.content.Intent;
+import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -61,10 +63,7 @@ public class ArticleActivity extends AppCompatActivity {
                     Toast.makeText(ArticleActivity.this,"error",Toast.LENGTH_SHORT).show();
                     break;
                 case  UPDATE:
-                    adapter = new ArticleAdaper(articleList);
-                    mListView.setAdapter(adapter);
-                    mListView.setSelection(articleList.size()-10);//加载更多后继续在当前的item，方便继续阅读
-                    mListView.smoothScrollToPosition(articleList.size()-10);
+                    if(articleList.size() == 10 ) mListView.setAdapter(adapter);
                 default: break;
             }
         }
@@ -119,11 +118,7 @@ public class ArticleActivity extends AppCompatActivity {
 
     }
 
-    /**
-    * 加载更多
-    * @author wushiqian
-    * created at 2018/5/26 17:29
-    */
+
     private void loadMore() {
         new Thread(new Runnable() {
             @Override
@@ -143,50 +138,26 @@ public class ArticleActivity extends AppCompatActivity {
     /**
     * 加载界面
     * @author wushiqian
+    * @pram
+    * @return
     * created at 2018/5/25 23:37
     */
     private void initView() {
         toolbar = findViewById(R.id.toolBar);
-        //设置成actionbar
-        setSupportActionBar(toolbar);
-        toolbar.setLogo(R.drawable.article2);
-        //设置返回图标
-        toolbar.setNavigationIcon(R.drawable.back2);
-        //返回事件
+        setSupportActionBar(toolbar);       //设置成actionbar
+        toolbar.setLogo(R.drawable.ic_library_books_24dp);              //设置logo
+        toolbar.setNavigationIcon(R.drawable.ic_arrow_back_black_24dp);     //设置返回图标
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 finish();
             }
-        });
-        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                ArticleListItem articleListItem = articleList.get(position);
-                Toast.makeText(ArticleActivity.this,articleListItem.getTitle(),Toast.LENGTH_SHORT).show();
-                int itemId = articleListItem.getItemId();
-                Intent intent = new Intent(ArticleActivity.this,ContentActivity.class);
-                intent.putExtra("extra_data",itemId);
-                intent.putExtra("url",ApiUtil.ARTICLE_DETAIL_URL_PRE + itemId + ApiUtil.ARTICLE_DETAIL_URL_SUF);
-                intent.putExtra("type","essay");
-                startActivity(intent);
-            }
-        });
-        swipeRefresh = findViewById(R.id.swipe_refresh);
-        swipeRefresh.setColorSchemeResources(R.color.colorPrimary);
-        swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                refreshArticle();
-            }
-        });
-        mListView.setONLoadMoreListener(new LoadMoreListView.OnLoadMoreListener() {
-            @Override
-            public void onloadMore() {
-                loadMore();
-            }
-
-        });
+        });         //返回事件
+        if(Build.VERSION.SDK_INT >= 21){            //沉浸式状态栏
+            View decorView = getWindow().getDecorView();
+            decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+            getWindow().setStatusBarColor(Color.TRANSPARENT);
+        }
         //判断认为是滑动的最小距离(乘以系数调整滑动灵敏度)
         scaledTouchSlop = ViewConfiguration.get(this).getScaledTouchSlop()*3.0f;
         mListView.setOnTouchListener(new View.OnTouchListener() {
@@ -229,12 +200,44 @@ public class ArticleActivity extends AppCompatActivity {
                 }
                 return false;//注意此处不能返回true，因为如果返回true,onTouchEvent就无法执行，导致的后果是ListView无法滑动
             }
-        });//设置触摸事件
+        });         //设置触摸事件
+
+        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {      //设置点击事件
+                ArticleListItem articleListItem = articleList.get(position);
+                Toast.makeText(ArticleActivity.this,articleListItem.getTitle(),Toast.LENGTH_SHORT).show();
+                int itemId = articleListItem.getItemId();
+                Intent intent = new Intent(ArticleActivity.this,ContentActivity.class);
+                intent.putExtra("extra_data",itemId);
+                intent.putExtra("url",ApiUtil.ARTICLE_DETAIL_URL_PRE + itemId + ApiUtil.ARTICLE_DETAIL_URL_SUF);
+                intent.putExtra("type","essay");
+                startActivity(intent);
+            }
+        });
+        mListView.setONLoadMoreListener(new LoadMoreListView.OnLoadMoreListener() {     //设置加载更多监听事件
+            @Override
+            public void onloadMore() {
+                loadMore();
+            }
+        });
+
+        swipeRefresh = findViewById(R.id.swipe_refresh);        //设置下拉刷新组件
+        swipeRefresh.setColorSchemeResources(R.color.colorPrimary);
+        swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                refreshArticle();
+            }
+        });
+        adapter = new ArticleAdaper(articleList);
     }
 
     /**
     * 从本地储存读取文章列表，若读不到则从网络加载
     * @author wushiqian
+    * @pram
+    * @return
     * created at 2018/5/25 23:38
     */
     private void initArticle() {
@@ -305,6 +308,8 @@ public class ArticleActivity extends AppCompatActivity {
     /**
     * 刷新文章列表
     * @author wushiqian
+    * @pram
+    * @return
     * created at 2018/5/25 23:39
     */
     private void refreshArticle() {

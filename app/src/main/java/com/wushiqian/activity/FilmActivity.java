@@ -2,6 +2,8 @@ package com.wushiqian.activity;
 
 import android.animation.ObjectAnimator;
 import android.content.Intent;
+import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -59,10 +61,7 @@ public class FilmActivity extends BaseActivity{
                     Toast.makeText(FilmActivity.this,"error",Toast.LENGTH_SHORT).show();
                     break;
                 case  UPDATE:
-                    adapter = new FilmAdapter(mFilmList);
-                    mListView.setAdapter(adapter);
-                    mListView.setSelection(mFilmList.size()-10);//加载更多后继续在当前的item，方便继续阅读
-                    mListView.smoothScrollToPosition(mFilmList.size()-10);
+                    if(mFilmList.size() == 10) mListView.setAdapter(adapter);
                 default: break;
             }
         }
@@ -72,13 +71,18 @@ public class FilmActivity extends BaseActivity{
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_list);
+        initView();
+        initFilm();
+    }
+
+    private void initView() {
         mListView = findViewById(R.id.activity_list_view);
         toolbar = findViewById(R.id.toolBar);
         //设置成actionbar
         setSupportActionBar(toolbar);
-        toolbar.setLogo(R.drawable.nav_film);
+        toolbar.setLogo(R.drawable.ic_video_library_black_24dp);
         //设置返回图标
-        toolbar.setNavigationIcon(R.drawable.back2);
+        toolbar.setNavigationIcon(R.drawable.ic_arrow_back_black_24dp);
         //返回事件
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
@@ -112,15 +116,12 @@ public class FilmActivity extends BaseActivity{
             public void onloadMore() {
                 loadMore();
             }
-
         });
         //判断认为是滑动的最小距离(乘以系数调整滑动灵敏度)
         scaledTouchSlop = ViewConfiguration.get(this).getScaledTouchSlop()*3.0f;
         mCache = CacheUtil.get(this);
-        initFilm();
-        /**
-         * 设置触摸事件
-         */
+        adapter = new FilmAdapter(mFilmList);
+
         mListView.setOnTouchListener(new View.OnTouchListener() {
             private float currentY;
             private int direction=-1;
@@ -161,7 +162,12 @@ public class FilmActivity extends BaseActivity{
                 }
                 return false;//注意此处不能返回true，因为如果返回true,onTouchEvent就无法执行，导致的后果是ListView无法滑动
             }
-        });
+        });//设置触摸事件
+        if(Build.VERSION.SDK_INT >= 21){
+            View decorView = getWindow().getDecorView();
+            decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+            getWindow().setStatusBarColor(Color.TRANSPARENT);
+        }
     }
 
     /**

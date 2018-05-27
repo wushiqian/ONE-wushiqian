@@ -4,17 +4,14 @@
 
     <item
         android:id="@+id/menu_like"
-        android:icon="@drawable/like"
         app:showAsAction="always"/>
 
     <item
         android:id="@+id/menu_comment"
-        android:icon="@drawable/comments"
         android:title="comment"
         app:showAsAction="always"/>
     <item
         android:id="@+id/menu_share"
-        android:icon="@drawable/share"
         app:showAsAction="always"/>
 
 </menu>

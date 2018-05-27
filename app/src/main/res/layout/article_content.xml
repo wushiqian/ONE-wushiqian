@@ -14,6 +14,7 @@
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
 
     <ScrollView
+        android:id="@+id/content_sv"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true">
@@ -75,7 +76,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:src="@drawable/author"/>
+                android:src="@drawable/ic_account_box_36dp"/>
 
             <TextView
                 android:text="作者"
@@ -116,7 +117,7 @@
             <ImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@drawable/comments"
+                android:src="@drawable/ic_comment_black_24dp"
                 android:layout_gravity="center"/>
 
             <TextView

@@ -1,5 +1,7 @@
 package com.wushiqian.activity;
 
+import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
@@ -25,7 +27,7 @@ public class AboutActivity extends BaseActivity{
         //设置成actionbar
         setSupportActionBar(toolbar);
         //设置返回图标
-        toolbar.setNavigationIcon(R.drawable.back2);
+        toolbar.setNavigationIcon(R.drawable.ic_arrow_back_black_24dp);
         //返回事件
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
@@ -33,5 +35,10 @@ public class AboutActivity extends BaseActivity{
                 finish();
             }
         });
+        if(Build.VERSION.SDK_INT >= 21){
+            View decorView = getWindow().getDecorView();
+            decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+            getWindow().setStatusBarColor(Color.TRANSPARENT);
+        }
     }
 }

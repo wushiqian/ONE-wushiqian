@@ -1,5 +1,6 @@
 package com.wushiqian.activity;
 
+import android.animation.ObjectAnimator;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -14,8 +15,11 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.Html;
 import android.text.Spanned;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.widget.ImageView;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -32,6 +36,7 @@ import com.wushiqian.util.CacheUtil;
 import com.wushiqian.util.DensityUtil;
 import com.wushiqian.util.HttpCallbackListener;
 import com.wushiqian.util.HttpUtil;
+import com.wushiqian.util.ImageManager;
 import com.wushiqian.util.JSONUtil;
 import com.wushiqian.util.LogUtil;
 
@@ -78,6 +83,10 @@ public class ContentActivity extends BaseActivity {
     private Film film;
     private ArticleListItem article;
     private Author mAuthor;
+    private float scaledTouchSlop;
+    private float firstY = 0;
+    private ObjectAnimator animtor;
+    private ScrollView mScrollView;
 
     private Handler handler = new Handler() {
         public void handleMessage(@NonNull Message msg) {
@@ -95,6 +104,7 @@ public class ContentActivity extends BaseActivity {
                             });
                         }
                     }).start();
+                    mToolbar.setTitle(article.getTitle());
                     mTvright.setText(article.getCopyright());
                     mTvIntroduce.setText(article.getIntroauthor());
                     mTvTitle.setText(article.getTitle());
@@ -110,7 +120,7 @@ public class ContentActivity extends BaseActivity {
                 case UPDATE_AUTHOR:
                     mTvDesc.setText(mAuthor.getAuthorDesc());
                     mTvAuthorName.setText(mAuthor.getAuthor());
-                    new DownloadImageTask(mIvauthor)
+                    new ImageManager(mIvauthor)
                         .execute(mAuthor.getAuthorImaUrl());
                     break;
                 case MUSIC_CONTENT:
@@ -126,11 +136,12 @@ public class ContentActivity extends BaseActivity {
                             });
                         }
                     }).start();
+                    mToolbar.setTitle(music.getTitle());
                     mTvright.setText(music.getCopyright());
                     mTvIntroduce.setText(music.getIntroauthor());
                     mTvTitle.setText(music.getTitle());
                     mTvAuthor.setText(music.getTitleInfo());
-                    new DownloadImageTask(mIvCover)
+                    new ImageManager(mIvCover)
                             .execute(music.getCoverUrl());
                     break;
                 case MOVIE_CONTENT:
@@ -146,6 +157,7 @@ public class ContentActivity extends BaseActivity {
                             });
                         }
                     }).start();
+                    mToolbar.setTitle(film.getTitle());
                     mTvright.setText(film.getCopyright());
                     mTvIntroduce.setText(film.getIntroauthor());
                     mTvTitle.setText(film.getTitle());
@@ -176,19 +188,16 @@ public class ContentActivity extends BaseActivity {
         }else if(type.equals("movie")){
             initMovie();
         }
-
-
     }
 
     private void initView() {
         mCache = CacheUtil.get(this);
         mToolbar = findViewById(R.id.content_toolBar);
-        //设置成actionbar
-        setSupportActionBar(mToolbar);
-        getSupportActionBar().setTitle("一个");
-        mToolbar.setLogo(R.drawable.article2);
+        setSupportActionBar(mToolbar);      //设置成actionbar
         //设置返回图标
-        mToolbar.setNavigationIcon(R.drawable.back2);
+        mToolbar.setNavigationIcon(R.drawable.ic_arrow_back_black_24dp);
+        //判断认为是滑动的最小距离(乘以系数调整滑动灵敏度)
+        scaledTouchSlop = ViewConfiguration.get(this).getScaledTouchSlop()*3.0f;
         //返回事件
         mToolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
@@ -196,6 +205,7 @@ public class ContentActivity extends BaseActivity {
                 finish();
             }
         });
+        //找到个控件
         mTextView = findViewById(R.id.article_content);
         mTvTitle = findViewById(R.id.content_tv_title);
         mTvAuthor = findViewById(R.id.content_tv_author);
@@ -206,11 +216,91 @@ public class ContentActivity extends BaseActivity {
         mTvAuthorName = findViewById(R.id.author_name);
         mTvDesc = findViewById(R.id.content_desc);
         mIvCover = findViewById(R.id.content_iv_cover);
-        if(Build.VERSION.SDK_INT >= 21){
+        mScrollView = findViewById(R.id.content_sv);
+        mScrollView.setOnTouchListener(new View.OnTouchListener() {
+            private float currentY;
+            private int direction=-1;
+            private boolean mShow = true;
+
+            @Override
+            public boolean onTouch(View view, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        firstY = event.getY();
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        currentY = event.getY();
+                        //向下滑动
+                        if (currentY - firstY > scaledTouchSlop) {
+                            direction = 0;
+                            mToolbar.setVisibility(View.VISIBLE);
+                        }
+                        //向上滑动
+                        else if (firstY - currentY > scaledTouchSlop) {
+                            direction = 1;
+                        }
+                        //如果是向上滑动，并且ToolBar是显示的，就隐藏ToolBar
+                        if (direction == 1) {
+                            if (mShow) {
+                                toobarAnim(1);
+                                mShow = !mShow;
+                            }
+                        } else if (direction == 0) {
+                            if (!mShow) {
+                                toobarAnim(0);
+                                mShow = !mShow;
+                            }
+                        }
+                        break;
+                    case MotionEvent.ACTION_UP:
+                        break;
+                }
+                return false;//注意此处不能返回true，因为如果返回true,onTouchEvent就无法执行，导致的后果是ListView无法滑动
+            }
+        });//设置触摸事件
+        if(Build.VERSION.SDK_INT >= 21){        // 沉浸式状态栏
             View decorView = getWindow().getDecorView();
             decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
             getWindow().setStatusBarColor(Color.TRANSPARENT);
         }
+    }
+
+    /**
+     * ToolBar显示隐藏动画
+     * @param direction
+     */
+    public void toobarAnim(int direction) {
+        //开始新的动画之前要先取消以前的动画
+        if (animtor != null && animtor.isRunning()) {
+            animtor.cancel();
+        }
+        //toolbar.getTranslationY()获取的是Toolbar距离自己顶部的距离
+        float translationY=mToolbar.getTranslationY();
+        if (direction == 0) {
+            animtor = ObjectAnimator.ofFloat(mToolbar, "translationY", translationY, 0);
+            animtor.start();
+        } else if (direction == 1) {
+            animtor = ObjectAnimator.ofFloat(mToolbar, "translationY", translationY, -mToolbar.getHeight());
+            animtor.start();
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try{
+                        Thread.sleep(150);
+                    }catch (InterruptedException e){
+                        e.printStackTrace();
+                    }
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mToolbar.setVisibility(View.GONE);
+                        }
+                    });
+                }
+            }).start();
+        }
+
+
     }
 
     private void initMovie() {
@@ -349,8 +439,6 @@ public class ContentActivity extends BaseActivity {
     /**
     * 加载作者栏
     * @author wushiqian
-    * @pram
-    * @return
     * created at 2018/5/26 17:33
     */
     private void initAuthor() {
@@ -394,8 +482,6 @@ public class ContentActivity extends BaseActivity {
     /**
     * 加载评论列表
     * @author wushiqian
-    * @pram
-    * @return
     * created at 2018/5/26 17:33
     */
     private void initComment() {
@@ -448,8 +534,6 @@ public class ContentActivity extends BaseActivity {
     /**
     * 加载html里的图片
     * @author wushiqian
-    * @pram
-    * @return
     * created at 2018/5/26 17:31
     */
     Html.ImageGetter imageGetter = new Html.ImageGetter() {
@@ -477,39 +561,5 @@ public class ContentActivity extends BaseActivity {
             return drawable;
         }
     };
-
-    /**
-    * 异步加载图片
-    * @author wushiqian
-    * created at 2018/5/26 17:33
-    */
-    private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
-        ImageView bmImage;
-
-    public DownloadImageTask(ImageView bmImage) {
-        this.bmImage = bmImage;
-    }
-
-    protected Bitmap doInBackground(String... urls) {
-        String urldisplay = urls[0];
-        Bitmap mIcon11 = mCache.getAsBitmap(urldisplay);
-        if (mIcon11 == null) {
-            LogUtil.d(TAG,"网络加载的图片");
-            try {
-                InputStream in = new java.net.URL(urldisplay).openStream();
-                mIcon11 = BitmapFactory.decodeStream(in);
-                mCache.put(urldisplay,mIcon11,12 * CacheUtil.TIME_HOUR);
-            } catch (Exception e) {
-                LogUtil.e("Error", e.getMessage());
-                e.printStackTrace();
-            }
-        }
-        return mIcon11;
-    }
-
-    protected void onPostExecute(Bitmap result) {
-        bmImage.setImageBitmap(result);
-    }
-}
 
 }

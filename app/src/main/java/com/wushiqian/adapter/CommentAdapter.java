@@ -40,7 +40,6 @@ public class CommentAdapter extends BaseAdapter {
                 return value.getBitmap().getByteCount();
             }
         };
-
     }
 
     @Override

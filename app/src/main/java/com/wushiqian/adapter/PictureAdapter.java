@@ -38,7 +38,6 @@ public class PictureAdapter extends BaseAdapter {
                 return value.getBitmap().getByteCount();
             }
         };
-
     }
 
     @Override

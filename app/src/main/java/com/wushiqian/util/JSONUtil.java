@@ -1,11 +1,15 @@
 package com.wushiqian.util;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import com.wushiqian.bean.ArticleListItem;
 import com.wushiqian.bean.Author;
 import com.wushiqian.bean.Comment;
 import com.wushiqian.bean.Film;
 import com.wushiqian.bean.Music;
 import com.wushiqian.bean.Picture;
+import com.wushiqian.db.MyDatabaseHelper;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -22,7 +26,10 @@ import java.util.List;
 */
 public class JSONUtil {
 
-    public static Picture praseJSONPictureDetail(JSONObject jsonObject){
+    private MyDatabaseHelper mDatabaseHelper;
+
+    @Nullable
+    public static Picture praseJSONPictureDetail(@NonNull JSONObject jsonObject){
         Picture picture = new Picture();
         try{
             String message = jsonObject.getString("hp_author");
@@ -176,6 +183,7 @@ public class JSONUtil {
     }
 
     public static Music parseJSONmusic(JSONObject jsonObject){
+        Music music = null;
         try {
             String title = jsonObject.getString("title");
             String musicName = jsonObject.getString("music_name");
@@ -183,12 +191,12 @@ public class JSONUtil {
             String forward = "" + musicName + "     歌手/" + musicer;
             String imageUrl = jsonObject.getString("img_url");
             int itemId = jsonObject.getInt("item_id");
-            Music music = new Music(title, forward, itemId, imageUrl);
+            music = new Music(title, forward, itemId, imageUrl);
             return music;
         }catch (Exception e){
             e.printStackTrace();
         }
-        return null;
+        return music;
         }
 
     public static Film parseJSONFilm(JSONObject jsonObject){

@@ -89,7 +89,7 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
         setContentView(R.layout.activity_main);
         mdate = TimeUtil.getTimeByCalendar();
         LogUtil.d(MainActivity.TAG,"今天是" + mdate);
-        //找到控件
+        //找到各控件
         mIvPic = findViewById(R.id.main_iv);
         mTvMessage = findViewById(R.id.main_tv_message);
         mTvContent = findViewById(R.id.mian_pic_content);
@@ -97,7 +97,6 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
         mTvArticleAuthor = findViewById(R.id.main_summary);
         mTvArticleTitle = findViewById(R.id.main_title);
         mTvArticleForward = findViewById(R.id.main_forward);
-//        mIvArticle = findViewById(R.id.main_iv_article);
         initView();
         init();
         initPicture();
@@ -274,7 +273,7 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
         NavigationView navView = findViewById(R.id.nav_view);
         if(actionBar != null){
             actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setHomeAsUpIndicator(R.drawable.menu);
+            actionBar.setHomeAsUpIndicator(R.drawable.ic_menu_black_24dp);
         }
         mDrawerLayout.setScrimColor(Color.TRANSPARENT); //去除侧滑时的阴影遮罩效果
 

@@ -75,7 +75,8 @@ public class ArticleAdaper extends BaseAdapter {
         }
         ArticleListItem articleListItem = list.get(position);
         holder.title.setText(articleListItem.getTitle());
-        holder.summary.setText("文/" + articleListItem.getAuthor());
+        String author = "文/" + articleListItem.getAuthor();
+        holder.summary.setText(author);
         holder.iv.setTag(articleListItem.getImageUrl());
         // 如果本地已有缓存，就从本地读取，否则从网络请求数据
         if(holder.iv.getTag()!=null && holder.iv.getTag().equals(list.get(position).getImageUrl())) { //解决错位，闪烁的问题
