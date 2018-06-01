@@ -35,20 +35,13 @@ public class MyViewPager extends ViewPager {
                 if (mTouchListener != null) {
                     mTouchListener.onPagerTouch(true);
                 }
-//                float downX =  ev.getX()
-//                long downTime = ev.getDownTime();
                 break;
             case MotionEvent.ACTION_CANCEL:
             case MotionEvent.ACTION_UP:
-                performClick();//主动点击事件，同时实现onTouch和onClick监听器时消除不必要错误。
+                performClick();     //主动点击事件，同时实现onTouch和onClick监听器时消除不必要错误。
                 if (mTouchListener != null) {
                     mTouchListener.onPagerTouch(false);
                 }
-//                if (System.currentTimeMillis() - downTime < 500
-//                        && Math.abs(downX - ev.getX()) < 30) {// 考虑到手按下和抬起时的坐标不可能完全重合，这里给出30的坐标偏差
-//                    // 点击事件被触发
-//                    Toast.makeText(MyApplication.getContext(),"error",Toast.LENGTH_SHORT).show();
-//                }
                 break;
         }
         return super.onTouchEvent(ev);

@@ -25,20 +25,10 @@ public class MusicAdapter extends BaseAdapter {
 
     private List<Music> list;
     private ListView listView;
-    private LruCache<String, BitmapDrawable> mImageCache;
 
     public MusicAdapter(List<Music> list) {
         super();
         this.list = list;
-        int maxCache = (int) Runtime.getRuntime().maxMemory();
-        int cacheSize = maxCache / 8;
-        mImageCache = new LruCache<String, BitmapDrawable>(cacheSize) {
-            @Override
-            protected int sizeOf(String key, BitmapDrawable value) {
-                return value.getBitmap().getByteCount();
-            }
-        };
-
     }
 
     @Override
@@ -78,15 +68,11 @@ public class MusicAdapter extends BaseAdapter {
         holder.forward.setText(music.getForward());
         holder.iv.setTag(music.getImageUrl());
         holder.iv.setImageResource(R.drawable.one);
-
         // 如果本地已有缓存，就从本地读取，否则从网络请求数据
-        if(holder.iv.getTag()!=null && holder.iv.getTag().equals(list.get(position).getImageUrl())) { //解决错位，闪烁的问题
-            if (mImageCache.get(music.getImageUrl()) != null ) {
-                holder.iv.setImageDrawable(mImageCache.get(music.getImageUrl()));
-            } else {
-                ImageLoadTask it = new ImageLoadTask(listView,mImageCache);
+        if(holder.iv.getTag()!=null && holder.iv.getTag().equals(list.get(position).getImageUrl())) {
+            //解决错位，闪烁的问题
+                ImageLoadTask it = new ImageLoadTask(listView);
                 it.execute(music.getImageUrl());
-            }
         }
         return convertView;
     }

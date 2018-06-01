@@ -2,6 +2,9 @@ package com.wushiqian.util;
 
 import android.content.Context;
 
+/**
+ * 密度工具类
+ */
 public class DensityUtil {
 
     /**

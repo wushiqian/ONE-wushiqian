@@ -9,7 +9,6 @@ import com.wushiqian.bean.Comment;
 import com.wushiqian.bean.Film;
 import com.wushiqian.bean.Music;
 import com.wushiqian.bean.Picture;
-import com.wushiqian.db.MyDatabaseHelper;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -18,15 +17,12 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-
 /**
 * JSON解析
 * @author wushiqian
 * created at 2018/5/25 20:23
 */
 public class JSONUtil {
-
-    private MyDatabaseHelper mDatabaseHelper;
 
     @Nullable
     public static Picture praseJSONPictureDetail(@NonNull JSONObject jsonObject){

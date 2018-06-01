@@ -14,19 +14,26 @@ import java.net.URL;
 
 /**
 * 列表的图片加载
+ * 三层缓存 内存缓存，文件缓存，网络缓存
 * @author wushiqian
 * created at 2018/5/25 20:22
 */
 public class ImageLoadTask extends AsyncTask<String, Void, BitmapDrawable> {
 
     private String imageUrl;
-    private ImageView bmImage;
     private ListView listView;
     private LruCache<String, BitmapDrawable> mImageCache;
 
-    public ImageLoadTask(ListView listView,LruCache<String, BitmapDrawable> imageCache){
+    public ImageLoadTask(ListView listView){
         this.listView = listView;
-        this.mImageCache = imageCache;
+        int maxCache = (int) Runtime.getRuntime().maxMemory();
+        int cacheSize = maxCache / 8;
+        mImageCache = new LruCache<String, BitmapDrawable>(cacheSize) {
+            @Override
+            protected int sizeOf(String key, BitmapDrawable value) {
+                return value.getBitmap().getByteCount();
+            }
+        };
     }
 
         @Override
@@ -52,7 +59,7 @@ public class ImageLoadTask extends AsyncTask<String, Void, BitmapDrawable> {
         }
 
         /**
-         * 先查看有没有缓存，如果没有缓存就根据url从网络上下载图片
+         * 先查看文件有没有缓存，如果没有缓存就根据url从网络上下载图片
          * @return Bitmap
          */
         private Bitmap downloadImage() {

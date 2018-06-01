@@ -21,6 +21,7 @@ public class MyDatabaseHelper extends SQLiteOpenHelper {
 
     public static final String CREATE_MUSIC = "create table Music ("
             + "id integer primary key autoincrement,"
+            + "listid integer,"
             + "itemId integer,"
             + "title text,"
             + "forward text,"

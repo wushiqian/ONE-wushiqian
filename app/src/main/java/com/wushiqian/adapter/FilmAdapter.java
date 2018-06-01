@@ -25,19 +25,10 @@ public class FilmAdapter extends BaseAdapter{
 
     private List<Film> list;
     private ListView listView;
-    private LruCache<String, BitmapDrawable> mImageCache;
 
     public FilmAdapter(List<Film> list) {
         super();
         this.list = list;
-        int maxCache = (int) Runtime.getRuntime().maxMemory();
-        int cacheSize = maxCache / 8;
-        mImageCache = new LruCache<String, BitmapDrawable>(cacheSize) {
-            @Override
-            protected int sizeOf(String key, BitmapDrawable value) {
-                return value.getBitmap().getByteCount();
-            }
-        };
     }
 
     @Override
@@ -75,15 +66,12 @@ public class FilmAdapter extends BaseAdapter{
         Film film = list.get(position);
         holder.title.setText(film.getTitle());
         holder.forward.setText(film.getForward());
+        holder.iv.setImageResource(R.drawable.one);//还未加载完成时默认显示这张图片
         holder.iv.setTag(film.getImageUrl());
         // 如果本地已有缓存，就从本地读取，否则从网络请求数据
         if(holder.iv.getTag() != null && holder.iv.getTag().equals(list.get(position).getImageUrl())) { //解决错位，闪烁的问题
-            if (mImageCache.get(film.getImageUrl()) != null) {
-                holder.iv.setImageDrawable(mImageCache.get(film.getImageUrl()));
-            } else {
-                ImageLoadTask it = new ImageLoadTask(listView, mImageCache);
+                ImageLoadTask it = new ImageLoadTask(listView);
                 it.execute(film.getImageUrl());
-            }
         }
         return convertView;
     }

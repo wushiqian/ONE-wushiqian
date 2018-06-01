@@ -25,20 +25,10 @@ public class ArticleAdaper extends BaseAdapter {
 
     private List<ArticleListItem> list;
     private ListView listView;
-    private LruCache<String, BitmapDrawable> mImageCache;
 
     public ArticleAdaper(List<ArticleListItem> list) {
         super();
         this.list = list;
-        int maxCache = (int) Runtime.getRuntime().maxMemory();
-        int cacheSize = maxCache / 8;
-        mImageCache = new LruCache<String, BitmapDrawable>(cacheSize) {
-            @Override
-            protected int sizeOf(String key, BitmapDrawable value) {
-                return value.getBitmap().getByteCount();
-            }
-        };
-
     }
 
     @Override
@@ -80,12 +70,8 @@ public class ArticleAdaper extends BaseAdapter {
         holder.iv.setTag(articleListItem.getImageUrl());
         // 如果本地已有缓存，就从本地读取，否则从网络请求数据
         if(holder.iv.getTag()!=null && holder.iv.getTag().equals(list.get(position).getImageUrl())) { //解决错位，闪烁的问题
-            if (mImageCache.get(articleListItem.getImageUrl()) != null) {
-                holder.iv.setImageDrawable(mImageCache.get(articleListItem.getImageUrl()));
-            } else {
-                ImageLoadTask it = new ImageLoadTask(listView, mImageCache);
+                ImageLoadTask it = new ImageLoadTask(listView);
                 it.execute(articleListItem.getImageUrl());
-            }
         }
         return convertView;
     }

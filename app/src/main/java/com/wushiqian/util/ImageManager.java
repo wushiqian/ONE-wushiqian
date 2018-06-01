@@ -10,6 +10,7 @@ import java.io.InputStream;
 
 /**
 * 图片加载类
+ * 三层缓存 内存缓存，文件缓存，网络缓存
 * @author wushiqian
 * created at 2018/5/27 1:36
 */
@@ -23,7 +24,7 @@ public class ImageManager extends AsyncTask<String, Void, Bitmap> {
     public ImageManager(ImageView imageView){
         this.mImageView = imageView;
         mCacheUtil = CacheUtil.get(MyApplication.getContext());
-        int maxCache = (int) Runtime.getRuntime().maxMemory();
+        int maxCache = (int) Runtime.getRuntime().maxMemory();  //最大内存缓存
         int cacheSize = maxCache / 8;
         mImageCache = new LruCache<String, Bitmap>(cacheSize) {
             @Override
@@ -36,10 +37,11 @@ public class ImageManager extends AsyncTask<String, Void, Bitmap> {
     protected Bitmap doInBackground(String... urls) {
         Bitmap bitmap = null;
         String urldisplay = urls[0];
-        // 如果本地已有缓存，就从本地读取，否则从网络请求数据
+        // 如果内存已有缓存，就从内存读取，否则就下一步
         if (mImageCache.get(urldisplay) != null) {
             bitmap = mImageCache.get(urldisplay);
         } else if(mCacheUtil.getAsBitmap(urldisplay) != null){
+            //如果本地已有缓存，就从本地读取，否则从网络请求数据
             bitmap = mCacheUtil.getAsBitmap(urldisplay);
         }else{
             LogUtil.d(TAG,"网络加载的图片");

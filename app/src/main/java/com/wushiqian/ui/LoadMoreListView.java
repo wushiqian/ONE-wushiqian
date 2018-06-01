@@ -39,19 +39,19 @@ public class LoadMoreListView extends ListView implements AbsListView.OnScrollLi
     }
 
     private void init(Context context){
-        mFootView= LayoutInflater.from(context).inflate(R.layout.foot_view,null);
+        mFootView = LayoutInflater.from(context).inflate(R.layout.foot_view,null);
         setOnScrollListener(this);
     }
 
     @Override
     public void onScrollStateChanged(AbsListView listView, int scrollState) {
         // 滑到底部后，判断listview已经停止滚动并且最后可视的条目等于adapter的条目
-        int lastVisibleIndex=listView.getLastVisiblePosition();
-        if (!mIsLoading&&scrollState == OnScrollListener.SCROLL_STATE_IDLE//停止滚动
-                && lastVisibleIndex ==mTotalItemCount-1) {//滑动到最后一项
-            mIsLoading=true;
+        int lastVisibleIndex = listView.getLastVisiblePosition();
+        if (!mIsLoading && scrollState == OnScrollListener.SCROLL_STATE_IDLE//停止滚动
+                && lastVisibleIndex == mTotalItemCount-1) {//滑动到最后一项
+            mIsLoading = true;
             addFooterView(mFootView);
-            if (mLoadMoreListener!=null) {
+            if (mLoadMoreListener != null) {
                 postDelayed(new Runnable() {
                     @Override
                     public void run() {
@@ -64,11 +64,11 @@ public class LoadMoreListView extends ListView implements AbsListView.OnScrollLi
 
     @Override
     public void onScroll(AbsListView absListView, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
-        mTotalItemCount=totalItemCount;
+        mTotalItemCount = totalItemCount;
     }
 
     public void setLoadCompleted(){
-        mIsLoading=false;
+        mIsLoading = false;
         removeFooterView(mFootView);
     }
 

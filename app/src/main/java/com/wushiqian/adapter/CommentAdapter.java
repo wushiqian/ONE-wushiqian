@@ -26,20 +26,10 @@ public class CommentAdapter extends BaseAdapter {
 
     private List<Comment> list;
     private ListView listView;
-    private LruCache<String, BitmapDrawable> mImageCache;
-    private CacheUtil mCache;
 
     public CommentAdapter(List<Comment> list) {
         super();
         this.list = list;
-        int maxCache = (int) Runtime.getRuntime().maxMemory();
-        int cacheSize = maxCache / 8;
-        mImageCache = new LruCache<String, BitmapDrawable>(cacheSize) {
-            @Override
-            protected int sizeOf(String key, BitmapDrawable value) {
-                return value.getBitmap().getByteCount();
-            }
-        };
     }
 
     @Override
@@ -81,12 +71,8 @@ public class CommentAdapter extends BaseAdapter {
         holder.mTvcomment.setText(comment.getComment());
         holder.mIvUser.setTag(comment.getImageUrl());
         // 如果本地已有缓存，就从本地读取，否则从网络请求数据
-        if (mImageCache.get(comment.getImageUrl()) != null) {
-            holder.mIvUser.setImageDrawable(mImageCache.get(comment.getImageUrl()));
-        } else {
-            ImageLoadTask it = new ImageLoadTask(listView,mImageCache);
-            it.execute(comment.getImageUrl());
-        }
+        ImageLoadTask it = new ImageLoadTask(listView);
+        it.execute(comment.getImageUrl());
         return convertView;
     }
 

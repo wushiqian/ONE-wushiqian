@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">ONE_wushiqian
-    <String comment="comments"/></string>
+    <string name="app_name">ONE_wushiqian</string>
+    <string name="load">正在加载..</string>
 
 </resources>

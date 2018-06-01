@@ -48,16 +48,18 @@ import java.util.List;
 //TODO 设置
 //TODO 适配18:9分辨率手机
 //TODO 启动页
+//TODO 图片压缩
 
 /**
 * 主界面，首页
 * @author wushiqian
 * created at 2018/5/25 20:13
 */
-public class MainActivity extends BaseActivity implements MyViewPager.OnViewPagerTouchListener, ViewPager.OnPageChangeListener,View.OnClickListener{
+public class MainActivity extends BaseActivity implements MyViewPager.OnViewPagerTouchListener,
+        ViewPager.OnPageChangeListener{
 
     private static final String TAG = "MainActivity";
-    private MyViewPager mLoopPager;
+    private MyViewPager mViewPager;
     private ViewPagerAdapter mPagerAdapter;
 
     private static List<com.wushiqian.bean.Picture> sPics = new ArrayList<>();
@@ -97,6 +99,7 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
         mTvArticleAuthor = findViewById(R.id.main_summary);
         mTvArticleTitle = findViewById(R.id.main_title);
         mTvArticleForward = findViewById(R.id.main_forward);
+        //初始化
         initView();
         init();
         initPicture();
@@ -115,14 +118,16 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
         new Thread(new Runnable() {
             @Override
             public void run() {
-                if(mCache.getAsJSONArray(ApiUtil.MAIN_PICTURE_URL_PRE + mdate + ApiUtil.MAIN_PICTURE_URL_SUF) == null) {
+                if(mCache.getAsJSONArray(ApiUtil.MAIN_PICTURE_URL_PRE + mdate
+                        + ApiUtil.MAIN_PICTURE_URL_SUF) == null) {
                     HttpUtil.sendHttpRequest(ApiUtil.MAIN_PICTURE_URL_PRE + mdate
                             + ApiUtil.MAIN_PICTURE_URL_SUF, new HttpCallbackListener() {
                         @Override
                         public void onFinish(final String data) {
                             try {
                                 JSONArray jsonArray = new JSONArray(data);
-                                mCache.put(ApiUtil.MAIN_PICTURE_URL_PRE + mdate + ApiUtil.MAIN_PICTURE_URL_SUF,jsonArray,CacheUtil.TIME_DAY);
+                                mCache.put(ApiUtil.MAIN_PICTURE_URL_PRE + mdate
+                                        + ApiUtil.MAIN_PICTURE_URL_SUF,jsonArray,CacheUtil.TIME_DAY);
                                 for(int i = 0; i < 5; i++){
                                     JSONObject jsonObject = jsonArray.getJSONObject(i);
                                     String imageUrl = jsonObject.getString("hp_img_url");
@@ -314,11 +319,9 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
         });
     }
 
-    @Override
-    public void onClick(View v) {
-
-    }
-
+    //  报错原因： 非静态内部类持有外部类的匿名引用，导致外部activity无法得到释放。
+    //  解决方法：handler内部持有外部的弱引用，并把handler改为静态内部类，
+    //  在activity的onDestory()中调用handler的removeCallback()方法。
     private static class MyHandler extends Handler {
 
         private final WeakReference<MainActivity> mActivity;
@@ -358,10 +361,8 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
     }
 
     /**
-    * 展示到ui中
+    * 把各种画面展示到ui中
     * @author wushiqian
-    * @pram
-    * @return
     * created at 2018/5/26 17:37
     */
     private void showArticle() {
@@ -411,44 +412,51 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
     }
 
     @Override
-    public void onAttachedToWindow() {
-        super.onAttachedToWindow();
-        //当这个界面绑定到窗口的时候
-        mHandler.post(mLooperTask);
+    public void onStart() {
+        super.onStart();
+        //当视图可见时继续滚动
+        mHandler.post(mLooperViewPagerTask);
     }
 
     @Override
-    public void onDetachedFromWindow() {
-        super.onDetachedFromWindow();
-        LogUtil.d(TAG, "onDetachedFromWindow");
-        mHandler.removeCallbacks(mLooperTask);
+    public void onStop() {
+        super.onStop();
+        //当视图不可见时停止滚动
+        mHandler.removeCallbacks(mLooperViewPagerTask);
     }
 
-    private Runnable mLooperTask = new Runnable() {
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        ActivityCollector.removeActvity(this);
+        mHandler.removeCallbacks(mLooperViewPagerTask); //XXX
+    }
+
+    private Runnable mLooperViewPagerTask = new Runnable() {
         @Override
         public void run() {
             if (!mIsTouch) {
                 //切换viewPager里的图片到下一个
-                int currentItem = mLoopPager.getCurrentItem();
-                mLoopPager.setCurrentItem(++currentItem, true);
+                int currentItem = mViewPager.getCurrentItem();
+                mViewPager.setCurrentItem( ++currentItem , true);
             }
-            mHandler.postDelayed(this,4000);
+            mHandler.postDelayed(this,5000);//5秒换一次
         }
     };
 
     private void initView() {
         //就是找到这个viewPager控件
-        mLoopPager = this.findViewById(R.id.looper_pager);
+        mViewPager = this.findViewById(R.id.looper_pager);
         //设置适配器
         mPagerAdapter = new ViewPagerAdapter();
         mPagerAdapter.setData(sPics);
-        mLoopPager.setAdapter(mPagerAdapter);
-        mLoopPager.setOnViewPagerTouchListener(MainActivity.this);
-        mLoopPager.addOnPageChangeListener(MainActivity.this);
+        mViewPager.setAdapter(mPagerAdapter);
+        mViewPager.setOnViewPagerTouchListener(MainActivity.this);
+        mViewPager.addOnPageChangeListener(MainActivity.this);
         mPointContainer = this.findViewById(R.id.points_container);
         //根据图片的个数,去添加点的个数
         insertPoint();
-        mLoopPager.setCurrentItem(mPagerAdapter.getDataRealSize() * 100, true);
+        mViewPager.setCurrentItem(mPagerAdapter.getDataRealSize() * 100, true);
         if(Build.VERSION.SDK_INT >= 21){        //设置沉浸式状态栏
             View decorView = getWindow().getDecorView();
             decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
@@ -456,6 +464,9 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
         }
     }
 
+    /**
+     * 根据图片的个数,去添加点的个数
+     */
     private void insertPoint() {
         for (int i = 0; i < 6; i++) {
             View point = new View(this);
@@ -490,16 +501,17 @@ public class MainActivity extends BaseActivity implements MyViewPager.OnViewPage
     }
 
     private void setSelectPoint(int realPosition) {
-        for (int i = 0; i < mPointContainer.getChildCount(); i++) {
-            View point = mPointContainer.getChildAt(i);
-            if (i != realPosition) {
-                //那就是白色
-                point.setBackgroundResource(R.drawable.shape_point_normal);
-            } else {
-                //选中的颜色
-                point.setBackgroundResource(R.drawable.shape_point_selected);
-            }
-        }
+        //设置颜色
+       for (int i = 0; i < mPointContainer.getChildCount(); i++) {
+           View point = mPointContainer.getChildAt(i);
+           if (i != realPosition) {
+               //那就是白色
+               point.setBackgroundResource(R.drawable.shape_point_normal);
+               } else {
+               //选中的颜色
+               point.setBackgroundResource(R.drawable.shape_point_selected);
+           }
+       }
     }
 
     @Override

@@ -61,7 +61,7 @@ public class MusicActivity extends BaseActivity{
     private MyDatabaseHelper mDatabaseHelper;
     private SQLiteDatabase db;
     private ContentValues values;
-    int index = 0;
+    int index = 10;
 
     private Handler handler = new Handler() {
         public void handleMessage(Message msg) {
@@ -196,7 +196,7 @@ public class MusicActivity extends BaseActivity{
         scaledTouchSlop = ViewConfiguration.get(this).getScaledTouchSlop()*3.0f;
         mListView.setOnTouchListener(new View.OnTouchListener() {
             private float currentY;
-            private int direction=-1;
+            private int direction = -1;
             private boolean mShow = true;
 
             @Override
@@ -248,22 +248,25 @@ public class MusicActivity extends BaseActivity{
         new Thread(new Runnable() {
             @Override
             public void run() {
-                Cursor cursor = db.rawQuery("select * from Music", null);
-                if(cursor.moveToPosition(index * 10)){
+                Cursor cursor = db.rawQuery("select * from Music where ? < id and id < ?",
+                        new String[]{ String.valueOf(index) , String.valueOf(index + 10)});
+                if(cursor.moveToFirst()){
+                    LogUtil.d("MusicActivity","缓存加载");
                     do{
                         int itemId = cursor.getInt(cursor.getColumnIndex("itemId"));
                         String title = cursor.getString(cursor.getColumnIndex("title"));
                         String forward = cursor.getString(cursor.getColumnIndex("forward"));
                         String imageUrl = cursor.getString(cursor.getColumnIndex("imageUrl"));
+                        nextList = cursor.getInt(cursor.getColumnIndex("listid"));
                         Music  music = new Music(title, forward, itemId, imageUrl);
                         mMusicList.add(music);
-                        if(mMusicList.size() == (index + 1) * 10) break;
                     }while (cursor.moveToNext());
                     Message message = new Message();
                     message.what = UPDATE;
                     handler.sendMessage(message);
                 }else{
                     LogUtil.d("MusicActivity","网络加载");
+
                     HttpUtil.sendHttpRequest(ApiUtil.MUSIC_LIST_URL_PRE + nextList
                             + ApiUtil.MUSIC_LIST_URL_SUF, new HttpCallbackListener() {
                         @Override
@@ -277,10 +280,12 @@ public class MusicActivity extends BaseActivity{
                                     values.put("title",music.getTitle());
                                     values.put("forward",music.getForward());
                                     values.put("imageUrl",music.getImageUrl());
+                                    nextList = jsonObject.getInt("id");
+                                    values.put("listid",nextList);
                                     db.insert("Music",null,values);
                                     values.clear();
                                     mMusicList.add(music);
-                                    nextList = jsonObject.getInt("id");
+
                                 }
                             } catch(Exception e){
                                 e.printStackTrace();
@@ -297,7 +302,7 @@ public class MusicActivity extends BaseActivity{
                         }
                     });
                 }
-                index++;
+                index += 10;
                 cursor.close();
             }
         }).start();
@@ -313,8 +318,8 @@ public class MusicActivity extends BaseActivity{
         new Thread(new Runnable() {
             @Override
             public void run() {
-                Cursor cursor = db.rawQuery("select * from Music",null);
-                if(cursor.moveToPosition(index * 10)){
+                Cursor cursor = db.rawQuery("select * from Music where id <= 10 ",null);
+                if(cursor.moveToFirst()){
                     do{
                         int itemId = cursor.getInt(cursor.getColumnIndex("itemId"));
                         String title = cursor.getString(cursor.getColumnIndex("title"));
@@ -322,7 +327,6 @@ public class MusicActivity extends BaseActivity{
                         String imageUrl = cursor.getString(cursor.getColumnIndex("imageUrl"));
                         Music  music = new Music(title, forward, itemId, imageUrl);
                         mMusicList.add(music);
-                        if(mMusicList.size() == (index + 1) * 10) break;
                         }while (cursor.moveToNext());
                     Message message = new Message();
                     message.what = INIT;
@@ -342,10 +346,11 @@ public class MusicActivity extends BaseActivity{
                                     values.put("title",music.getTitle());
                                     values.put("forward",music.getForward());
                                     values.put("imageUrl",music.getImageUrl());
+                                    nextList = jsonObject.getInt("id");
+                                    values.put("listid",nextList);
                                     db.insert("Music",null,values);
                                     values.clear();
                                     mMusicList.add(music);
-                                    nextList = jsonObject.getInt("id");
                                 }
                             } catch(Exception e){
                                 e.printStackTrace();
@@ -368,12 +373,11 @@ public class MusicActivity extends BaseActivity{
         }).start();
     }
 
-    // 重写
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         return true;
     }
-    //重写
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()){
@@ -387,8 +391,6 @@ public class MusicActivity extends BaseActivity{
     /**
     * 刷新音乐列表
     * @author wushiqian
-    * @pram
-    * @return
     * created at 2018/5/26 17:38
     */
     private void refreshMusic() {

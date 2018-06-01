@@ -260,7 +260,8 @@ public class ContentActivity extends BaseActivity {
         });//设置触摸事件
         if(Build.VERSION.SDK_INT >= 21){        // 沉浸式状态栏
             View decorView = getWindow().getDecorView();
-            decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+            decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
             getWindow().setStatusBarColor(Color.TRANSPARENT);
         }
     }
@@ -555,9 +556,9 @@ public class ContentActivity extends BaseActivity {
                 }
             }
             drawable.setBounds(0, 0, DensityUtil.dip2px(ContentActivity.this,
-                    drawable.getIntrinsicWidth()+ 280),  DensityUtil.dip2px(ContentActivity.this,
+                    drawable.getIntrinsicWidth()+ 240),  DensityUtil.dip2px(ContentActivity.this,
                     //由于getIntrinsicWidth()和getIntrinsicHeight()返回的宽高应该是dp为单位
-                    drawable.getIntrinsicHeight()+200));         //所以转化为px，但还是很少，，，再设大一点
+                    drawable.getIntrinsicHeight()+160));         //所以转化为px，但还是很少，，，再设大一点
             return drawable;
         }
     };

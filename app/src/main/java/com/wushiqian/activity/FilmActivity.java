@@ -54,6 +54,9 @@ public class FilmActivity extends BaseActivity{
     private float firstY = 0;
     private ObjectAnimator animtor;
 
+    //报错原因： 非静态内部类持有外部类的匿名引用，导致外部activity无法得到释放。
+    //解决方法：handler内部持有外部的弱引用，并把handler改为静态内部类，
+    // 在activity的onDestory()中调用handler的removeCallback()方法。
     private Handler handler = new Handler() {
         public void handleMessage(Message msg) {
             switch (msg.what) {

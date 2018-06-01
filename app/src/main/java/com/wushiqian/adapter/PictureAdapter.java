@@ -1,7 +1,5 @@
 package com.wushiqian.adapter;
 
-import android.graphics.drawable.BitmapDrawable;
-import android.util.LruCache;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,19 +23,10 @@ public class PictureAdapter extends BaseAdapter {
 
     private List<Picture> list;
     private ListView listView;
-    private LruCache<String, BitmapDrawable> mImageCache;
 
     public PictureAdapter(List<Picture> list) {
         super();
         this.list = list;
-        int maxCache = (int) Runtime.getRuntime().maxMemory();
-        int cacheSize = maxCache / 8;
-        mImageCache = new LruCache<String, BitmapDrawable>(cacheSize) {
-            @Override
-            protected int sizeOf(String key, BitmapDrawable value) {
-                return value.getBitmap().getByteCount();
-            }
-        };
     }
 
     @Override
@@ -66,7 +55,6 @@ public class PictureAdapter extends BaseAdapter {
                     R.layout.picture_item, null);
             holder = new ViewHolder();
             holder.iv = convertView.findViewById(R.id.picture_iv);
-            holder.iv.setImageResource(R.drawable.one);
             holder.message = convertView.findViewById(R.id.picture_tv_message);
             convertView.setTag(holder);
         } else {
@@ -74,15 +62,13 @@ public class PictureAdapter extends BaseAdapter {
         }
         Picture picture = list.get(position);
         holder.message.setText(picture.getMessage());
+        holder.iv.setImageResource(R.drawable.one);//还未加载完成时默认显示这张图片
         holder.iv.setTag(picture.getImageUrl());
         // 如果本地已有缓存，就从本地读取，否则从网络请求数据
-        if(holder.iv.getTag() != null && holder.iv.getTag().equals(list.get(position).getImageUrl())) { //解决错位，闪烁的问题
-            if (mImageCache.get(picture.getImageUrl()) != null) {
-                holder.iv.setImageDrawable(mImageCache.get(picture.getImageUrl()));
-            } else {
-                ImageLoadTask it = new ImageLoadTask(listView, mImageCache);
-                it.execute(picture.getImageUrl());
-            }
+        if(holder.iv.getTag() != null && holder.iv.getTag().equals(list.get(position).getImageUrl())) {
+            //解决错位，闪烁的问题
+            ImageLoadTask it = new ImageLoadTask(listView);
+            it.execute(picture.getImageUrl());
         }
         return convertView;
     }

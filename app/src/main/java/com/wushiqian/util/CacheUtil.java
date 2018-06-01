@@ -29,23 +29,37 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
+ * 获取实例的完成了如下工作
+ * 新建了缓存目录
+ * 通过CacheUtil构造方法构造新实例，并且将该实例引用插入mInstanceMap
+ * 实例化CacheManager，计算cacheSize和cacheCount
+ */
+
+/**
+ *
+ * JsonObject、JsonArray、Bitmap、Drawable的存入缓存都是转化为字符串/byte格式，
+ * 再调用函数put(String key, String value)
+ */
+
+/**
  * 缓存类
  * @author yangfuhai
  */
 public class CacheUtil {
+
     public static final int TIME_HOUR = 60 * 60;
     public static final int TIME_DAY = TIME_HOUR * 24;
     private static final int MAX_SIZE = 1000 * 1000 * 500; // 500 mb
     private static final int MAX_COUNT = Integer.MAX_VALUE; // 不限制存放数据的数量
     private static Map<String, CacheUtil> mInstanceMap = new HashMap<String, CacheUtil>();
-    private ACacheManager mCache;
+    private CacheManager mCache;
 
     public static CacheUtil get(Context ctx) {
         return get(ctx, "CacheUtil");
     }
 
     public static CacheUtil get(Context ctx, String cacheName) {
-        File f = new File(ctx.getCacheDir(), cacheName);
+        File f = new File(ctx.getCacheDir(), cacheName);//在 /data/data/app-package-name/cache/CacheUtil创建了缓存目录
         return get(f, MAX_SIZE, MAX_COUNT);
     }
 
@@ -59,9 +73,11 @@ public class CacheUtil {
     }
 
     public static CacheUtil get(File cacheDir, long max_zise, int max_count) {
+        //在初次运行时manager == null，最终会调用到CacheUtil的 private 的构造方法
         CacheUtil manager = mInstanceMap.get(cacheDir.getAbsoluteFile() + myPid());
         if (manager == null) {
             manager = new CacheUtil(cacheDir, max_zise, max_count);
+            //将结果放入mInstanceMap中，key 值为路径+Pid，value 为实例化的ACache对象
             mInstanceMap.put(cacheDir.getAbsolutePath() + myPid(), manager);
         }
         return manager;
@@ -71,18 +87,22 @@ public class CacheUtil {
         return "_" + android.os.Process.myPid();
     }
 
+    //私有的构造函数
     private CacheUtil(File cacheDir, long max_size, int max_count) {
+        //如果目录文件不存在会抛出异常，同时最终将全局变量 ACacheManager初始化。
         if (!cacheDir.exists() && !cacheDir.mkdirs()) {
             throw new RuntimeException("can't make dirs in "
                     + cacheDir.getAbsolutePath());
         }
-        mCache = new ACacheManager(cacheDir, max_size, max_count);
+        mCache = new CacheManager(cacheDir, max_size, max_count);
     }
 
     public void put(String key, String value) {
+        //新建文件，每一个 key 对应一个文件
         File file = mCache.newFile(key);
         BufferedWriter out = null;
         try {
+            //将数据保存至文件
             out = new BufferedWriter(new FileWriter(file), 1024);
             out.write(value);
         } catch (IOException e) {
@@ -96,6 +116,7 @@ public class CacheUtil {
                     e.printStackTrace();
                 }
             }
+            //将文件加人mCache
             mCache.put(file);
         }
     }
@@ -108,6 +129,7 @@ public class CacheUtil {
      * @param saveTime 保存的时间，单位：秒
      */
     public void put(String key, String value, int saveTime) {
+        //Utils.newStringWithDateInfo(saveTime, value)会将time 和 value 整合成一个 String
         put(key, Utils.newStringWithDateInfo(saveTime, value));
     }
 
@@ -130,10 +152,10 @@ public class CacheUtil {
             while ((currentLine = in.readLine()) != null) {
                 readString += currentLine;
             }
-            if (!Utils.isDue(readString)) {
-                return Utils.clearDateInfo(readString);
+            if (!Utils.isDue(readString)) {//String数据未到期
+                return Utils.clearDateInfo(readString);//去除时间信息的字符串内容
             } else {
-                removeFile = true;
+                removeFile = true;//数据到期了则删除缓存
                 return null;
             }
         } catch (IOException e) {
@@ -147,8 +169,7 @@ public class CacheUtil {
                     e.printStackTrace();
                 }
             }
-            if (removeFile)
-                remove(key);
+            if (removeFile) remove(key);
         }
     }
 
@@ -376,17 +397,19 @@ public class CacheUtil {
 
     /**
      * @title 缓存管理器
+     * CacheManager 是一个缓存管理器，ACache的内部类，最终的缓存的 put 和 get都由这个类管理
      */
-    public class ACacheManager {
+    public class CacheManager {
         private final AtomicLong cacheSize;
         private final AtomicInteger cacheCount;
+        //cacheSize，cacheCount 都是原子量，不用加锁保证了线程安全，
         private final long sizeLimit;
         private final int countLimit;
         private final Map<File, Long> lastUsageDates = Collections
                 .synchronizedMap(new HashMap<File, Long>());
         private File cacheDir;
 
-        private ACacheManager(File cacheDir, long sizeLimit, int countLimit) {
+        private CacheManager(File cacheDir, long sizeLimit, int countLimit) {
             this.cacheDir = cacheDir;
             this.sizeLimit = sizeLimit;
             this.countLimit = countLimit;
@@ -407,8 +430,10 @@ public class CacheUtil {
                     File[] cachedFiles = cacheDir.listFiles();
                     if (cachedFiles != null) {
                         for (File cachedFile : cachedFiles) {
+                            //遍历 cacheDir 中的文件，并计算大小和数量
                             size += calculateSize(cachedFile);
                             count += 1;
+                            //lastUsageDates Map 中保存了<File,最后修改时间>
                             lastUsageDates.put(cachedFile,
                                     cachedFile.lastModified());
                         }
@@ -421,25 +446,28 @@ public class CacheUtil {
 
         private void put(File file) {
             int curCacheCount = cacheCount.get();
+            //检查文件个数是不是超过显示
             while (curCacheCount + 1 > countLimit) {
-                long freedSize = removeNext();
+                //移除旧的文件,返回文件大小
+                long freedSize = removeNext();//更新cacheSize
                 cacheSize.addAndGet(-freedSize);
-
-                curCacheCount = cacheCount.addAndGet(-1);
+                curCacheCount = cacheCount.addAndGet(-1);//更新curCacheCount
             }
             cacheCount.addAndGet(1);
 
             long valueSize = calculateSize(file);
             long curCacheSize = cacheSize.get();
             while (curCacheSize + valueSize > sizeLimit) {
+                //检查缓存大小是不是超过显示
                 long freedSize = removeNext();
                 curCacheSize = cacheSize.addAndGet(-freedSize);
             }
             cacheSize.addAndGet(valueSize);
 
             Long currentTime = System.currentTimeMillis();
-            file.setLastModified(currentTime);
-            lastUsageDates.put(file, currentTime);
+            file.setLastModified(currentTime);//设置文件最后修改时间
+            //lastUsageDates Map 中保存了<File,最后修改时间>
+            lastUsageDates.put(file, currentTime);//更新map
         }
 
         private File get(String key) {
@@ -452,6 +480,7 @@ public class CacheUtil {
         }
 
         private File newFile(String key) {
+            //新建文件，文件名为key的整型哈希码
             return new File(cacheDir, key.hashCode() + "");
         }
 
@@ -474,7 +503,7 @@ public class CacheUtil {
         /**
          * 移除旧的文件
          *
-         * @return
+         * @return 旧的文件的大小
          */
         private long removeNext() {
             if (lastUsageDates.isEmpty()) {
@@ -483,15 +512,17 @@ public class CacheUtil {
 
             Long oldestUsage = null;
             File mostLongUsedFile = null;
-            Set<Entry<File, Long>> entries = lastUsageDates.entrySet();
+            Set<Entry<File, Long>> entries = lastUsageDates.entrySet();//获得 Entry<K,V> 的集合
             synchronized (lastUsageDates) {
                 for (Entry<File, Long> entry : entries) {
+                    //找出最久没有使用的
                     if (mostLongUsedFile == null) {
                         mostLongUsedFile = entry.getKey();
                         oldestUsage = entry.getValue();
                     } else {
                         Long lastValueUsage = entry.getValue();
                         if (lastValueUsage < oldestUsage) {
+                            //数值越大，时间值越大，表示越近使用的
                             oldestUsage = lastValueUsage;
                             mostLongUsedFile = entry.getKey();
                         }
@@ -506,6 +537,11 @@ public class CacheUtil {
             return fileSize;
         }
 
+        /**
+         * 查看文件的大小
+         * @param file
+         * @return
+         */
         private long calculateSize(File file) {
             return file.length();
         }
@@ -533,16 +569,17 @@ public class CacheUtil {
          * @return true：到期了 false：还没有到期
          */
         private static boolean isDue(byte[] data) {
-            String[] strs = getDateInfoFromDate(data);
+            String[] strs = getDateInfoFromDate(data);//分别拿出前面的时间信息，和实际的数据
             if (strs != null && strs.length == 2) {
                 String saveTimeStr = strs[0];
                 while (saveTimeStr.startsWith("0")) {
-                    saveTimeStr = saveTimeStr
-                            .substring(1, saveTimeStr.length());
+                    //去零
+                    saveTimeStr = saveTimeStr.substring(1, saveTimeStr.length());
                 }
                 long saveTime = Long.valueOf(saveTimeStr);
                 long deleteAfter = Long.valueOf(strs[1]);
-                if (System.currentTimeMillis() > saveTime + deleteAfter * 1000) {
+                if (System.currentTimeMillis() > saveTime + deleteAfter * 1000) {//乘以一千所以单位为秒
+                    //到期了
                     return true;
                 }
             }

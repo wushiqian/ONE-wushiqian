@@ -138,6 +138,7 @@ public class PictureActivity extends BaseActivity {
          protected void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             setContentView(R.layout.picture_list);
+            //找到各控件
             mlistView = findViewById(R.id.picture_lv);
             adapter = new PictureAdapter(mPictureList);
             mPictureList.clear();
@@ -181,7 +182,6 @@ public class PictureActivity extends BaseActivity {
         swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                mPictureList.clear();
                 refreshPicture();
             }
         });
@@ -204,12 +204,12 @@ public class PictureActivity extends BaseActivity {
             mlistView.setLoadCompleted();
         }
 
-    private void refreshPicture() {
-
+    private void refreshPicture() { //FIXME 失效了
         nextList = 0;
         mitemIdList.clear();
-        initPicture();
+        mPictureList.clear();
         adapter.notifyDataSetChanged();
+        initPicture();
         swipeRefresh.setRefreshing(false);
         }
 
